@@ -1,0 +1,41 @@
+{
+  "name": "finance-erp-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc -b --noEmit",
+    "build:prod": "tsc -b && vite build && node scripts/write-headers.mjs"
+  },
+  "dependencies": {
+    "@mantine/core": "7.17.8",
+    "@mantine/form": "7.17.8",
+    "@mantine/hooks": "7.17.8",
+    "@mantine/notifications": "7.17.8",
+    "@supabase/supabase-js": "2.117.2",
+    "@tanstack/react-query": "5.104.1",
+    "dayjs": "1.11.13",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-router-dom": "7.18.4",
+    "recharts": "3.10.1"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "6.6.3",
+    "@testing-library/react": "16.3.0",
+    "@types/react": "18.3.20",
+    "@types/react-dom": "18.3.6",
+    "@vitejs/plugin-react": "4.7.0",
+    "jsdom": "26.1.0",
+    "postcss": "8.5.28",
+    "postcss-preset-mantine": "1.18.0",
+    "postcss-simple-vars": "7.0.1",
+    "typescript": "5.8.3",
+    "vite": "6.4.3",
+    "vitest": "4.1.11"
+  }
+}

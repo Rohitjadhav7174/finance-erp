@@ -1,0 +1,38 @@
+# Tests on every push / pull request. Uses only throwaway local data — no secrets needed.
+name: ci
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: No secrets committed
+        run: |
+          ! git ls-files | grep -E '(^|/)\.env$|\.env\.local$|\.pem$|\.key$|\.xlsx$' | grep -v 'fixtures/'
+          ! git grep -nE 'AGE-SECRET-KEY-1|service_role.{0,20}eyJ|sb_secret_' -- . ':!*.md'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: PostgreSQL 16 server for tests
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-16
+      - run: pip install -q -r backend/requirements-dev.txt
+      - name: Known-vulnerability audit (Python)
+        run: pip-audit -r backend/requirements-ops.txt --progress-spinner off
+      - name: Database + API tests
+        env:
+          PATH_PG: /usr/lib/postgresql/16/bin
+        run: |
+          export PATH="$PATH_PG:$PATH"
+          (cd db/tests && pytest -q)
+          (cd backend && pytest -q)
+      - name: Frontend
+        working-directory: frontend
+        run: npm ci && npm audit --omit=dev && npm test && npm run build

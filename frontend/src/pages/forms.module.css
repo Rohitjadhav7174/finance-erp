@@ -1,0 +1,28 @@
+/* Form action bar: sticks above the phone's bottom navigation, at the bottom on desktop. */
+.actions {
+  position: sticky;
+  bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  z-index: 5;
+  padding-block: var(--mantine-spacing-sm);
+  background: var(--mantine-color-body);
+  border-top: 1px solid var(--mantine-color-default-border);
+}
+
+@media (min-width: $mantine-breakpoint-sm) {
+  .actions {
+    bottom: 0;
+  }
+}
+
+/* Let long button labels ("Send for approval") wrap on narrow phones instead of being cut off. */
+.buttons :global(.mantine-Button-root) {
+  height: auto;
+  min-height: 44px;
+  padding-inline: var(--mantine-spacing-xs);
+}
+
+.buttons :global(.mantine-Button-label) {
+  white-space: normal;
+  line-height: 1.2;
+  text-align: center;
+}

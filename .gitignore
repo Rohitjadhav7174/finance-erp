@@ -1,0 +1,22 @@
+# secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+backups/
+*.age
+
+# local dev
+.localdb/
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+node_modules/
+dist/
+.DS_Store
+*.xlsx
+!db/tests/fixtures/*.xlsx
+.vite/

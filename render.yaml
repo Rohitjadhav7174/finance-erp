@@ -1,0 +1,29 @@
+# Render blueprint for the FastAPI backend (Render → New → Blueprint → pick this repository).
+# Secrets are NOT stored here: Render asks for every `sync: false` value when you create the service.
+services:
+  - type: web
+    name: finance-erp-api
+    runtime: python
+    region: singapore          # closest Render region to India
+    plan: free                 # free sleeps after 15 min idle (first request ~1 min); use "starter" for real use
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    # --proxy-headers: rate limits and logs see the real client IP behind Render's proxy
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*' --no-server-header
+    healthCheckPath: /api/health
+    autoDeploy: false          # deploy deliberately after tests pass
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.9"
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL        # postgresql://app_api.<ref>:<password>@aws-0-ap-south-1.pooler.supabase.com:5432/postgres?sslmode=require
+        sync: false
+      - key: SUPABASE_URL        # https://<ref>.supabase.co
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET # only for legacy HS256 projects; leave empty otherwise
+        sync: false
+      - key: CORS_ORIGINS        # ["https://<your-frontend>.pages.dev"]
+        sync: false

@@ -1,0 +1,52 @@
+.printOnly {
+  display: none;
+}
+
+.tableWrap {
+  overflow: hidden;
+}
+
+.table td,
+.table th {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Print / "Save as PDF": only the report, black on white, A4 landscape friendly. */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 12mm;
+  }
+
+  :global(.mantine-AppShell-header),
+  :global(.mantine-AppShell-navbar),
+  :global(nav[aria-label='Main']),
+  .noPrint {
+    display: none !important;
+  }
+
+  :global(.mantine-AppShell-main) {
+    padding: 0 !important;
+  }
+
+  .printOnly {
+    display: block;
+  }
+
+  .tableWrap {
+    border: none;
+    overflow: visible;
+  }
+
+  .table {
+    font-size: 9pt;
+  }
+
+  .table thead {
+    display: table-header-group; /* repeat column headings on every page */
+  }
+
+  .table tr {
+    break-inside: avoid;
+  }
+}
