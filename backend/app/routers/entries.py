@@ -290,6 +290,27 @@ def monthly_entry(company_id: uuid.UUID, body: MonthlySheetIn, idempotency_key: 
 
     from .. import schemas as s
 
+    # Fields the Excel sheet does not have get sheet defaults: Cash in Hand, one standard customer,
+    # and a generated bill number (MB-YYYY-MM, then -2, -3 … if that month already has one).
+    if not (body.received_into_id and body.paid_from_id):
+        cash = db.execute("select id from fin.accounts where company_id = %s and code = 'CASH'", (company_id,)).fetchone()
+        if cash is None:
+            raise HTTPException(422, "This company has no Cash in Hand account.")
+        body.received_into_id = body.received_into_id or cash["id"]
+        body.paid_from_id = body.paid_from_id or cash["id"]
+    if (body.monthly_bill or body.installment_received) and not body.party_id:
+        row = db.execute("select id from fin.parties where company_id = %s and lower(name) = 'monthly bill customer'",
+                         (company_id,)).fetchone()
+        body.party_id = row["id"] if row else db.execute(
+            "insert into fin.parties (company_id, name, kind) values (%s, 'Monthly bill customer', 'customer') returning id",
+            (company_id,)).fetchone()["id"]
+    if body.monthly_bill and not body.bill_no:
+        base = f"MB-{(body.period_from or body.entry_date):%Y-%m}"
+        n = 1
+        while db.execute("select 1 from fin.bills where company_id = %s and direction = 'receivable' "
+                         "and lower(trim(bill_no)) = lower(%s)", (company_id, base if n == 1 else f"{base}-{n}")).fetchone():
+            n += 1
+        body.bill_no = base if n == 1 else f"{base}-{n}"
     common = {"entry_date": body.entry_date, "notes": body.notes, "site_id": body.site_id, "action": body.action}
     key = lambda part: f"{idempotency_key}-{part}" if idempotency_key else None  # noqa: E731
     created: list[uuid.UUID] = []

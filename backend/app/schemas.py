@@ -204,14 +204,7 @@ class MonthlySheetIn(_EntryCommon):
     def _rules(self):
         if not (self.monthly_bill or self.installment_received or self.expenses):
             raise ValueError("enter at least one amount (monthly bill, installment received or an expense)")
-        if (self.monthly_bill or self.installment_received) and not self.party_id:
-            raise ValueError("choose the customer")
-        if self.monthly_bill and not self.bill_no:
-            raise ValueError("enter the bill number")
-        if self.installment_received and not self.received_into_id:
-            raise ValueError("choose where the installment was received (cash or bank)")
-        if self.expenses and not self.paid_from_id:
-            raise ValueError("choose where the expenses were paid from (cash or bank)")
+        # customer, bill no. and cash/bank are optional: the server fills sheet defaults
         if self.period_from and self.period_to and self.period_to < self.period_from:
             raise ValueError("period end is before period start")
         return self

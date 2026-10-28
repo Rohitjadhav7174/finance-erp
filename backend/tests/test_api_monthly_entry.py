@@ -45,9 +45,6 @@ def test_all_or_nothing(client, auth, seed):
 
 def test_missing_choices_are_explained(client, auth, seed):
     art, h, acc, cust = _setup(client, auth, seed)
-    r = client.post(f"/api/companies/{art}/monthly-entry", headers=h,
-                    json={"entry_date": "2025-08-26", "expenses": [{"account_id": acc["EXP-DSL"], "amount": "10"}]})
-    assert r.status_code == 422 and "paid from" in r.text
     r = client.post(f"/api/companies/{art}/monthly-entry", headers=h, json={"entry_date": "2025-08-26"})
     assert r.status_code == 422 and "at least one amount" in r.text
 
@@ -62,3 +59,21 @@ def test_data_entry_sends_row_for_approval(client, auth, seed):
     assert client.post(f"/api/companies/{art}/monthly-entry", headers=h, json={
         "entry_date": "2025-08-26", "expenses": [{"account_id": acc["EXP-WRK"], "amount": "1"}],
         "paid_from_id": acc["CASH"], "action": "post"}).status_code == 403
+
+
+def test_excel_fields_only_get_sheet_defaults(client, auth, seed):
+    """The form sends only the Excel columns; customer, bill no. and cash are filled by the server."""
+    art, h = seed["companies"]["ART"], auth("ART:accountant")
+    acc = {a["code"]: a["id"] for a in client.get(f"/api/companies/{art}/accounts", headers=h).json()}
+    row = {"entry_date": "2019-03-05", "period_from": "2019-03-01", "period_to": "2019-03-31",
+           "monthly_bill": "99000", "installment_received": "40000",
+           "expenses": [{"account_id": acc["EXP-DSL"], "amount": "1000", "label": "Diesel Payment"}], "action": "post"}
+    first = client.post(f"/api/companies/{art}/monthly-entry", json=row, headers=h)
+    assert first.status_code == 201, first.text
+    second = client.post(f"/api/companies/{art}/monthly-entry", json=row, headers=h)
+    assert second.status_code == 201, second.text
+    nos = [client.get(f"/api/entries/{r.json()['entries'][0]['id']}", headers=h).json()["bill"]["bill_no"] for r in (first, second)]
+    assert nos == ["MB-2019-03", "MB-2019-03-2"]
+    e = client.get(f"/api/entries/{first.json()['entries'][1]['id']}", headers=h).json()
+    assert e["party_name"] == "Monthly bill customer"
+    assert any(l["code"] == "CASH" and l["debit"] == "40000.00" for l in e["lines"])
