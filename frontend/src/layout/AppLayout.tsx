@@ -97,7 +97,8 @@ export function AppLayout() {
       <AppShell.Navbar p="sm" visibleFrom="sm">
         <Stack gap={4} h="100%">
           {nav.map((n) => (
-            <NavLink key={n.to} component={Link} to={n.to} label={n.label} leftSection={n.icon} active={active(n.to)} />
+            <NavLink key={n.to} component={Link} to={n.to} label={n.label} leftSection={n.icon} active={active(n.to)}
+              color={company.theme_color} variant="light" fw={600} style={{ borderRadius: 10 }} />
           ))}
           <Box mt="auto" />
           <Text size="sm" fw={600} truncate>{me.profile.full_name}</Text>

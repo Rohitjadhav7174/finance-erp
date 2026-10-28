@@ -300,7 +300,7 @@ function BillExtras({ v, set, errors }: { v: Values; set: <K extends keyof Value
     set('installments', parts.map((amt, i) => ({ due_date: addMonths(first, i), expected_amount: amt })));
   };
   return (
-    <Paper withBorder radius="md" p="sm">
+    <Paper withBorder p="sm">
       <Stack gap="sm">
         <Text fw={600} size="sm">Service period (optional)</Text>
         <Group grow>
@@ -342,7 +342,7 @@ function AllocationPicker({ bills, loading, amount, value, onChange, error, kind
   const left = fromPaise(toPaise(amount) - toPaise(allocated));
   const sorted = useMemo(() => bills.filter((b) => b.status === 'posted'), [bills]);
   return (
-    <Paper withBorder radius="md" p="sm">
+    <Paper withBorder p="sm">
       <Group justify="space-between" mb="xs">
         <Text fw={600} size="sm">Apply to bills</Text>
         {sorted.length > 0 && (

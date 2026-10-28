@@ -23,9 +23,12 @@ export function BackupBanner() {
   });
   if (!data || (!data.overdue && data.last_status !== 'failed')) return null;
   return (
-    <Alert color="red" title={data.last_status === 'failed' ? 'The last backup FAILED' : 'Backups are overdue'} mb="md">
-      Last successful backup: {when(data.last_success_at)}. Financial records are at risk until a backup succeeds.{' '}
-      <Anchor component={Link} to="/backups">Details</Anchor>
+    <Alert color="red" variant="light" mb="md" py={8} px="sm" radius="md">
+      <Text size="sm" fw={600}>
+        {data.last_status === 'failed' ? 'The last backup failed.' : 'No recent backup.'}{' '}
+        <Text span fw={400}>Last good backup: {when(data.last_success_at)}.</Text>{' '}
+        <Anchor component={Link} to="/backups" size="sm">Details</Anchor>
+      </Text>
     </Alert>
   );
 }
@@ -52,7 +55,7 @@ export function BackupsPage() {
   return (
     <Stack maw={900}>
       <Title order={3}>Backups</Title>
-      <Paper withBorder radius="md" p="md">
+      <Paper withBorder p="md">
         <Group justify="space-between">
           <Stack gap={2}>
             <Text size="sm">Last successful backup: <b>{when(h.last_success_at)}</b></Text>
@@ -67,7 +70,7 @@ export function BackupsPage() {
         A weekly job restores the newest backup into a separate database and checks every count and total.
         Restoring into the live system is a manual, documented procedure (docs/05) — it is deliberately not a button.
       </Text>
-      <Paper withBorder radius="md">
+      <Paper withBorder>
         <Table.ScrollContainer minWidth={640}>
           <Table fz="xs" striped>
             <Table.Thead><Table.Tr><Table.Th>Started</Table.Th><Table.Th>Status</Table.Th><Table.Th>File</Table.Th><Table.Th ta="right">Size</Table.Th><Table.Th ta="right">Entries</Table.Th><Table.Th>Restore-tested</Table.Th></Table.Tr></Table.Thead>

@@ -1,0 +1,124 @@
+/* App-wide look: soft background, white rounded cards with gentle depth, company colour as accent. */
+:root {
+  --app-bg: #f3f5f9;
+  --card-border: #e6e9ef;
+  --card-shadow: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.06);
+}
+
+body {
+  background: var(--app-bg);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+
+/* Every card */
+.mantine-Paper-root[data-with-border] {
+  border-color: var(--card-border);
+  box-shadow: var(--card-shadow);
+}
+
+/* Tappable cards lift slightly */
+a.mantine-UnstyledButton-root > .mantine-Paper-root,
+.mantine-UnstyledButton-root > .mantine-Paper-root {
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+@media (hover: hover) {
+  .mantine-UnstyledButton-root:hover > .mantine-Paper-root {
+    box-shadow: 0 4px 12px rgb(16 24 40 / 0.08);
+    transform: translateY(-1px);
+  }
+}
+
+/* Page titles */
+.mantine-Title-root[data-order="3"] {
+  letter-spacing: -0.01em;
+}
+
+/* Inputs: comfortable on phones, never zoomed by iOS (needs >= 16px) */
+.mantine-Input-input {
+  font-size: max(16px, 1em);
+  background: #fff;
+}
+.mantine-InputWrapper-label {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+/* Section heading inside cards: a numbered chip */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.section-title > span {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 13px;
+  color: #fff;
+  background: var(--company-color, #1971c2);
+}
+
+/* Calculated value boxes */
+.calc-box {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--company-color, #1971c2) 7%, #fff);
+  border: 1px dashed color-mix(in srgb, var(--company-color, #1971c2) 30%, #fff);
+  min-width: 0;
+}
+
+/* Dashboard hero */
+.hero {
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  border-radius: 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, var(--company-color, #1971c2), color-mix(in srgb, var(--company-color, #1971c2) 60%, #000));
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--company-color, #1971c2) 35%, transparent);
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  right: -60px;
+  top: -60px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.1);
+}
+.hero-amount {
+  font-size: clamp(28px, 8vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+/* Icon chip on tiles */
+.tile-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+/* Long amounts never push the layout wider than the screen */
+.amount {
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 360px) {
+  .mantine-AppShell-main {
+    padding-inline: 10px !important;
+  }
+}

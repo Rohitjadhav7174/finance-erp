@@ -52,7 +52,7 @@ export function ImportsPage() {
   return (
     <Stack maw={820}>
       <Title order={3}>Import from Excel</Title>
-      <Paper withBorder radius="md" p="md">
+      <Paper withBorder p="md">
         <Stack gap="xs">
           <Text size="sm">Nothing is saved to the books until you review a preview and a company admin confirms. Confirmed rows become <b>drafts</b> that an accountant checks and posts.</Text>
           <Text size="sm" c="dimmed">Accepted: .xlsx up to 5 MB. Recognised layouts: the monthly balance sheet used so far, and the one-row-per-transaction template.</Text>
@@ -71,7 +71,7 @@ export function ImportsPage() {
       {list.data?.length === 0 && <EmptyState title="No imports yet" />}
       {list.data?.map((b) => (
         <UnstyledButton key={b.id} component={Link} to={`/imports/${b.id}`}>
-          <Paper withBorder radius="md" p="sm">
+          <Paper withBorder p="sm">
             <Group justify="space-between" wrap="nowrap">
               <Box style={{ minWidth: 0 }}>
                 <Text fw={600} truncate>{b.file_name}</Text>
@@ -147,7 +147,7 @@ export function ImportDetailPage() {
       {b.sheets.filter((s) => s.message).map((s) => <Alert key={s.sheet} color="gray" p="xs">Sheet “{s.sheet.trim()}”: {s.message}</Alert>)}
 
       {editable && (
-        <Paper withBorder radius="md" p="md">
+        <Paper withBorder p="md">
           <Text fw={700}>Information missing from the workbook</Text>
           <Text size="xs" c="dimmed" mb="sm">The workbook doesn’t say who paid or whether it was cash or bank. Choose here; you can still change single rows below. Nothing is guessed.</Text>
           <SimpleGrid cols={{ base: 1, sm: 3 }}>
@@ -163,7 +163,7 @@ export function ImportDetailPage() {
         </Paper>
       )}
 
-      <Paper withBorder radius="md" p="md">
+      <Paper withBorder p="md">
         <Text fw={700} mb="xs">Check against the workbook’s own totals</Text>
         <Table.ScrollContainer minWidth={520}>
           <Table fz="xs">
@@ -219,7 +219,7 @@ function ImportRow({ r, editable, accounts, onPatch }: {
   const problems = r.all_issues.filter((i) => i.level !== 'info');
   const overrides = r.overrides;
   return (
-    <Paper withBorder radius="md" p="sm" style={{ borderLeft: `4px solid var(--mantine-color-${r.blocking ? 'red' : problems.length ? 'orange' : 'green'}-6)`, opacity: r.decision === 'import' ? 1 : 0.6 }}>
+    <Paper withBorder p="sm" style={{ borderLeft: `4px solid var(--mantine-color-${r.blocking ? 'red' : problems.length ? 'orange' : 'green'}-6)`, opacity: r.decision === 'import' ? 1 : 0.6 }}>
       <Group justify="space-between" wrap="nowrap" align="flex-start">
         <Box style={{ minWidth: 0 }}>
           <Text size="sm" fw={600}>{e.kind === 'receipt' ? 'Received' : e.kind === 'expense' ? `Expense · ${e.category_text ?? ''}` : 'Bill'} · {formatDate(e.entry_date)}</Text>

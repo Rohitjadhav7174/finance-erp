@@ -59,7 +59,7 @@ export function BillsPage() {
       <Stack gap="xs">
         {rows.map((b) => (
           <UnstyledButton key={b.id} component={Link} to={`/bills/${b.id}`}>
-            <Paper withBorder radius="md" p="sm">
+            <Paper withBorder p="sm">
               <Group justify="space-between" wrap="nowrap" align="flex-start">
                 <Box style={{ minWidth: 0 }}>
                   <Text fw={600} truncate>{b.party_name}</Text>
@@ -103,7 +103,7 @@ export function BillDetailPage() {
         </div>
         <StatusBadge status={b.pay_status} />
       </Group>
-      <Paper withBorder radius="md" p="md">
+      <Paper withBorder p="md">
         <Group grow>
           <Stack gap={0}><Text size="xs" c="dimmed">Bill amount</Text><Text fw={700}>{formatINR(b.amount)}</Text></Stack>
           <Stack gap={0}><Text size="xs" c="dimmed">{b.direction === 'receivable' ? 'Received' : 'Paid'}</Text><Text fw={700} c="teal.9">{formatINR(b.paid)}</Text></Stack>
@@ -129,7 +129,7 @@ export function BillDetailPage() {
       )}
 
       {b.installments.length > 0 && (
-        <Paper withBorder radius="md" p="md">
+        <Paper withBorder p="md">
           <Text fw={600} mb="xs">Installments</Text>
           <Stack gap="xs">
             {b.installments.map((i) => (
@@ -146,7 +146,7 @@ export function BillDetailPage() {
         </Paper>
       )}
 
-      <Paper withBorder radius="md" p="md">
+      <Paper withBorder p="md">
         <Text fw={600} mb="xs">Payment history</Text>
         {b.payments.length === 0 && <Text size="sm" c="dimmed">No payments yet.</Text>}
         {b.payments.map((p) => (

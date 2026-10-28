@@ -25,7 +25,7 @@ export function CompanyPicker() {
 
 export function EmptyState({ title, children }: { title: string; children?: React.ReactNode }) {
   return (
-    <Paper withBorder radius="md" p="xl" ta="center">
+    <Paper withBorder p="xl" ta="center">
       <Box>
         <Text fw={700}>{title}</Text>
         {children && <Text c="dimmed" size="sm" mt={4}>{children}</Text>}

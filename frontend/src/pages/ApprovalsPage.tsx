@@ -40,7 +40,7 @@ export function ApprovalsPage() {
       {data?.map((a) => {
         const selfBlocked = a.is_mine && !me?.profile.is_super_admin;
         return (
-          <Paper key={a.id} withBorder radius="md" p="md">
+          <Paper key={a.id} withBorder p="md">
             <Stack gap={6}>
               <Group justify="space-between">
                 <Text fw={700}>{ACTION_LABEL[a.action]}</Text>

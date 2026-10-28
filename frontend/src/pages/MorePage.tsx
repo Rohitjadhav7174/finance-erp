@@ -13,21 +13,21 @@ export function MorePage() {
   return (
     <Stack maw={640}>
       <Title order={3}>More</Title>
-      <Paper withBorder radius="md" p="md">
+      <Paper withBorder p="md">
         <Text fw={700}>{me.profile.full_name}</Text>
         <Text size="sm" c="dimmed">{me.profile.email}</Text>
         <Badge mt="xs" variant="light">{ROLE_LABELS[company.role]} · {company.code}</Badge>
       </Paper>
 
       <Text fw={700} size="sm" c="dimmed">Daily work</Text>
-      <Paper withBorder radius="md">
+      <Paper withBorder>
         <NavLink component={Link} to="/pending" label="Pending work" description="Overdue installments, drafts, approvals" leftSection={<IconClock />} />
         <NavLink component={Link} to="/search" label="Search" leftSection={<IconSearch />} />
         {admin && <NavLink component={Link} to="/approvals" label="Approvals" description="Reversal requests" leftSection={<IconClock />} />}
       </Paper>
 
       <Text fw={700} size="sm" c="dimmed">Details &amp; other entry types</Text>
-      <Paper withBorder radius="md">
+      <Paper withBorder>
         <NavLink component={Link} to="/entries" label="All entries (list)" leftSection={<IconList />} />
         <NavLink component={Link} to="/bills" label="Bills & installments" leftSection={<IconReceipt />} />
         {can('data_entry') && <NavLink component={Link} to="/new/payment" label="Pay a supplier" leftSection={<IconSwap />} />}
@@ -36,7 +36,7 @@ export function MorePage() {
       </Paper>
 
       <Text fw={700} size="sm" c="dimmed">Setup</Text>
-      <Paper withBorder radius="md">
+      <Paper withBorder>
         <NavLink component={Link} to="/accounts" label="Accounts & categories" description="Cash, bank, expense types" leftSection={<IconSwap />} />
         {can('accountant') && <NavLink component={Link} to="/imports" label="Import from Excel" leftSection={<IconChart />} />}
         {admin && (

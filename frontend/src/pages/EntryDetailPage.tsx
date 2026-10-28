@@ -89,7 +89,7 @@ export function EntryDetailPage() {
       )}
       {e.status === 'pending_approval' && <Alert color="yellow">Waiting for an accountant to check and post.</Alert>}
 
-      <Paper withBorder radius="md" p="md">
+      <Paper withBorder p="md">
         <Stack gap={6}>
           <Row label="Entry no.">{e.entry_no ?? 'Assigned when posted'}</Row>
           <Row label="Date">{formatDate(e.entry_date)}</Row>
@@ -106,7 +106,7 @@ export function EntryDetailPage() {
       </Paper>
 
       {e.allocations.length > 0 && (
-        <Paper withBorder radius="md" p="md">
+        <Paper withBorder p="md">
           <Text fw={600} mb="xs">Applied to bills</Text>
           {e.allocations.map((a) => (
             <Group key={a.bill_id} justify="space-between">
@@ -117,7 +117,7 @@ export function EntryDetailPage() {
         </Paper>
       )}
 
-      <Paper withBorder radius="md" p="md">
+      <Paper withBorder p="md">
         <Text fw={600} mb="xs">Accounting</Text>
         <Table.ScrollContainer minWidth={320}>
           <Table fz="sm" verticalSpacing={4}>
@@ -136,7 +136,7 @@ export function EntryDetailPage() {
       </Paper>
 
       {e.approvals.length > 0 && (
-        <Paper withBorder radius="md" p="md">
+        <Paper withBorder p="md">
           <Text fw={600} mb="xs">Approval requests</Text>
           {e.approvals.map((a) => (
             <Stack key={a.id} gap={2} mb="xs">
@@ -149,7 +149,7 @@ export function EntryDetailPage() {
       )}
 
       {e.history.length > 0 && (
-        <Paper withBorder radius="md" p="md">
+        <Paper withBorder p="md">
           <Text fw={600} mb="xs">History</Text>
           {e.history.map((h, i) => (
             <Text key={i} size="xs" c="dimmed">

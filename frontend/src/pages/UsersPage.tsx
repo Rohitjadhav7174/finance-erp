@@ -70,7 +70,7 @@ export function UsersPage() {
         const self = u.user_id === me?.profile.user_id;
         const locked = self || (u.role === 'company_admin' && !isSuper);
         return (
-          <Paper key={u.user_id} withBorder radius="md" p="md" opacity={u.is_active && u.membership_active ? 1 : 0.6}>
+          <Paper key={u.user_id} withBorder p="md" opacity={u.is_active && u.membership_active ? 1 : 0.6}>
             <Stack gap="xs">
               <Group justify="space-between" wrap="nowrap">
                 <div style={{ minWidth: 0 }}>

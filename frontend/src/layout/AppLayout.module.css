@@ -1,5 +1,8 @@
 .header {
   border-top: 4px solid var(--company-color);
+  background: rgb(255 255 255 / 0.92);
+  backdrop-filter: saturate(180%) blur(10px);
+  border-bottom: 1px solid var(--card-border, #e6e9ef);
 }
 
 .companyButton {
@@ -41,8 +44,10 @@
   align-items: center;
   height: calc(64px + env(safe-area-inset-bottom, 0px));
   padding-bottom: env(safe-area-inset-bottom, 0px);
-  background: var(--mantine-color-body);
-  border-top: 1px solid var(--mantine-color-default-border);
+  background: rgb(255 255 255 / 0.96);
+  backdrop-filter: saturate(180%) blur(10px);
+  border-top: 1px solid var(--card-border, #e6e9ef);
+  box-shadow: 0 -4px 16px rgb(16 24 40 / 0.06);
 }
 
 @media (min-width: $mantine-breakpoint-sm) {
@@ -63,9 +68,22 @@
   text-decoration: none;
 }
 
+.bottomLink > svg {
+  padding: 3px 14px;
+  width: 52px;
+  height: 30px;
+  border-radius: 999px;
+  box-sizing: border-box;
+  transition: background 0.15s ease;
+}
+
 .bottomLink[data-active] {
   color: var(--company-color);
   font-weight: 700;
+}
+
+.bottomLink[data-active] > svg {
+  background: color-mix(in srgb, var(--company-color) 14%, transparent);
 }
 
 .bottomLink:focus-visible,

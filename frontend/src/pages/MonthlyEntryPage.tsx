@@ -30,9 +30,9 @@ const monthEnd = (iso: string) => {
 
 function Calc({ label, value, tone, children }: { label: string; value?: string; tone?: string; children?: React.ReactNode }) {
   return (
-    <Box p="xs" bg="var(--mantine-color-gray-1)" style={{ borderRadius: 8 }}>
-      <Text size="sm" c="dimmed">{label}</Text>
-      {children ?? <Text fw={700} size="lg" c={tone}>{value}</Text>}
+    <Box className="calc-box">
+      <Text size="xs" c="dimmed" fw={600}>{label}</Text>
+      {children ?? <Text fw={800} size="lg" c={tone} className="amount">{value}</Text>}
     </Box>
   );
 }
@@ -116,12 +116,13 @@ export function MonthlyEntryPage() {
     <Stack maw={1000}>
       <div>
         <Title order={3}>Monthly entry</Title>
-        <Text size="sm" c="dimmed"><Text span fw={700} c={company.theme_color}>{company.name}</Text> · same columns as the Excel sheet · grey boxes are calculated</Text>
+        <Text size="sm" c="dimmed"><Text span fw={700} c={company.theme_color}>{company.name}</Text> · same columns as the Excel sheet · shaded boxes are calculated</Text>
       </div>
       {error && <Alert color="red" role="alert">{error}</Alert>}
 
-      <Paper withBorder radius="md" p="md">
-        <SimpleGrid cols={{ base: 2, md: 3 }}>
+      <Paper withBorder p="md">
+        <div className="section-title"><span>1</span>Period</div>
+        <SimpleGrid cols={{ base: 1, xs: 2, md: 3 }}>
           <TextInput type="month" label="Period" size="md" value={periodFrom.slice(0, 7)}
             onChange={(e) => { const v = e.currentTarget.value; if (v) { setPeriodFrom(`${v}-01`); setPeriodTo(monthEnd(`${v}-01`)); } }} />
           <DateField label="Date" value={date} onChange={(e) => setDate(e.currentTarget.value)} />
@@ -129,8 +130,8 @@ export function MonthlyEntryPage() {
         </SimpleGrid>
       </Paper>
 
-      <Paper withBorder radius="md" p="md">
-        <Text fw={600} mb={6}>Payments</Text>
+      <Paper withBorder p="md">
+        <div className="section-title"><span>2</span>Payments</div>
         <Stack gap="xs">
           {payments.map((p, i) => (
             <Group key={i} wrap="nowrap" align="flex-end" gap="xs">
@@ -153,7 +154,8 @@ export function MonthlyEntryPage() {
         </Stack>
       </Paper>
 
-      <Paper withBorder radius="md" p="md">
+      <Paper withBorder p="md">
+        <div className="section-title"><span>3</span>Bill &amp; installment</div>
         <SimpleGrid cols={{ base: 1, sm: 3 }}>
           <AmountInput label="Monthly Bill (₹)" value={bill} onChange={(e) => setBill(cleanAmount(e.currentTarget.value))} />
           <AmountInput label="Other Expense / Charge (₹)" value={other} onChange={(e) => setOther(cleanAmount(e.currentTarget.value))} />
@@ -161,8 +163,9 @@ export function MonthlyEntryPage() {
         </SimpleGrid>
       </Paper>
 
-      <Paper withBorder radius="md" p="md">
-        <SimpleGrid cols={{ base: 2, md: 3 }}>
+      <Paper withBorder p="md">
+        <div className="section-title"><span>4</span>Calculated (like the Excel formulas)</div>
+        <SimpleGrid cols={{ base: 1, xs: 2, md: 3 }}>
           <Calc label="Expenses (₹)" value={formatINR(expenses)} />
           <Calc label="Cash Balance (₹)" value={formatINR(cashBalance)} tone={toPaise(cashBalance) < 0n ? 'red.9' : undefined} />
           <Calc label="Outstanding Bill (₹)" value={formatINR(outstanding)} />
@@ -170,13 +173,13 @@ export function MonthlyEntryPage() {
           <DateField label="Period To" value={periodTo} onChange={(e) => setPeriodTo(e.currentTarget.value)} />
           <Calc label="Period Shortfall (₹)" value={formatINR(shortfall)} tone={toPaise(shortfall) > 0n ? 'red.9' : undefined} />
           <Calc label="Status">
-            <Badge mt={6} size="lg" variant="light" color={status === 'Clear' ? 'green' : 'red'}>{status}</Badge>
+            <Badge mt={6} size="lg" variant="filled" color={status === 'Clear' ? 'green.8' : 'red.8'}>{status}</Badge>
           </Calc>
         </SimpleGrid>
       </Paper>
 
       {can('accountant') ? (
-        <Button size="lg" color={company.theme_color} disabled={!hasAmount || !!bad} loading={save.isPending}
+        <Button size="lg" radius="xl" color={company.theme_color} disabled={!hasAmount || !!bad} loading={save.isPending}
           onClick={() => save.mutate('post')}>Save</Button>
       ) : (
         <Button size="lg" color={company.theme_color} disabled={!hasAmount || !!bad} loading={save.isPending}

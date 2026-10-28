@@ -40,7 +40,7 @@ export function ReconcileListPage() {
       <Title order={3}>Reconcile cash &amp; bank</Title>
       <Text size="sm" c="dimmed">Compare the bank statement (or the cash you counted) with the books. Tick each entry that appears on the statement; when the difference is ₹0.00 you can complete it.</Text>
       {can('accountant') && (
-        <Paper withBorder radius="md" p="md">
+        <Paper withBorder p="md">
           <SimpleGrid cols={{ base: 1, sm: 3 }}>
             <Select label="Account" size="md" value={accountId} onChange={setAccountId}
               data={moneyAccounts(accounts.data).map((a) => ({ value: a.id, label: accountLabel(a) }))} />
@@ -56,7 +56,7 @@ export function ReconcileListPage() {
       {list.data?.length === 0 && <EmptyState title="No reconciliations yet" />}
       {list.data?.map((r) => (
         <UnstyledButton key={r.id} component={Link} to={`/reconcile/${r.id}`}>
-          <Paper withBorder radius="md" p="sm">
+          <Paper withBorder p="sm">
             <Group justify="space-between">
               <Box><Text fw={600}>{r.account_name}</Text><Text size="xs" c="dimmed">Statement {formatDate(r.statement_date)} · {formatINR(r.statement_balance)}{r.completed_by_name ? ` · by ${r.completed_by_name}` : ''}</Text></Box>
               <Badge color={r.status === 'completed' ? 'green' : 'yellow'} variant="light">{r.status === 'completed' ? 'Completed' : 'In progress'}</Badge>
@@ -95,7 +95,7 @@ export function ReconcilePage() {
     <Stack maw={820}>
       <Anchor component={Link} to="/reconcile" size="sm">← Reconciliations</Anchor>
       <Title order={3}>{r.account_name} · {formatDate(r.statement_date)}</Title>
-      <Paper withBorder radius="md" p="sm" pos="sticky" top={60} style={{ zIndex: 3 }} bg="var(--mantine-color-body)">
+      <Paper withBorder p="sm" pos="sticky" top={60} style={{ zIndex: 3 }} bg="var(--mantine-color-body)">
         <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="xs">
           <Box><Text size="xs" c="dimmed">Statement</Text><Text fw={700}>{formatINR(r.statement_balance)}</Text></Box>
           <Box><Text size="xs" c="dimmed">Ticked (cleared)</Text><Text fw={700}>{formatINR(r.cleared_balance)}</Text></Box>
@@ -121,7 +121,7 @@ export function ReconcilePage() {
         {r.lines.map((l) => {
           const amount = l.debit !== '0.00' ? l.debit : `-${l.credit}`;
           return (
-            <Paper key={l.id} withBorder radius="md" p="xs">
+            <Paper key={l.id} withBorder p="xs">
               <Group wrap="nowrap" gap="sm">
                 <Checkbox size="md" checked={l.ticked} disabled={!open || tick.isPending} aria-label={`Cleared: ${l.description}`}
                   onChange={(e) => tick.mutate({ ids: [l.id], cleared: e.currentTarget.checked })} />

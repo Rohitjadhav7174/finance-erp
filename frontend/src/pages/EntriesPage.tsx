@@ -102,7 +102,7 @@ function EntryCard({ r }: { r: EntryRow }) {
   const color = INFLOW.has(r.entry_type) ? 'teal.9' : OUTFLOW.has(r.entry_type) ? 'red.9' : undefined;
   return (
     <UnstyledButton component={Link} to={`/entries/${r.id}`} aria-label={`${TYPE_LABEL[r.entry_type]} ${formatINR(r.amount)} ${r.party_name ?? ''}`}>
-      <Paper withBorder radius="md" p="sm" style={{ opacity: r.status === 'reversed' ? 0.6 : 1 }}>
+      <Paper withBorder p="sm" style={{ opacity: r.status === 'reversed' ? 0.6 : 1 }}>
         <Group justify="space-between" wrap="nowrap" align="flex-start">
           <Box style={{ minWidth: 0 }}>
             <Text fw={600} truncate>{r.party_name ?? r.description}</Text>

@@ -86,7 +86,7 @@ export function PendingPage() {
         {data?.items.map((i, idx) => (
           <UnstyledButton key={`${i.kind}-${i.ref_id}-${idx}`} component={Link}
             to={i.kind === 'approval_request' ? '/approvals' : `/${i.ref_type === 'bill' ? 'bills' : 'entries'}/${i.ref_id}`}>
-            <Paper withBorder radius="md" p="sm" style={{ borderLeft: `4px solid var(--mantine-color-${TONE[i.kind]}-6)` }}>
+            <Paper withBorder p="sm" style={{ borderLeft: `4px solid var(--mantine-color-${TONE[i.kind]}-6)` }}>
               <Group justify="space-between" wrap="nowrap" align="flex-start">
                 <Box style={{ minWidth: 0 }}>
                   <Badge size="xs" color={TONE[i.kind]} variant="light" mb={4}>{i.kind_label}</Badge>

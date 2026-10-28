@@ -1,5 +1,6 @@
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
+import './design.css';
 
 import { Center, Loader, MantineProvider, createTheme, type CSSVariablesResolver } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
@@ -39,6 +40,12 @@ const theme = createTheme({
   defaultRadius: 'md',
   primaryColor: 'blue',
   primaryShade: { light: 8, dark: 6 },
+  headings: { fontWeight: '700' },
+  components: {
+    Paper: { defaultProps: { radius: 'lg' } },
+    Button: { defaultProps: { radius: 'md' } },
+    Badge: { defaultProps: { radius: 'sm' } },
+  },
 });
 
 // Text on tinted ("light" variant) badges, alerts and buttons uses shade 9 so it stays >= 4.5:1.

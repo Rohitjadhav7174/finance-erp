@@ -1,4 +1,4 @@
-import { Alert, Anchor, Box, Button, Group, Loader, Paper, Select, SimpleGrid, Stack, Table, Text, Title, UnstyledButton } from '@mantine/core';
+import { Alert, Anchor, Badge, Box, Button, Group, Loader, Paper, Select, SimpleGrid, Stack, Table, Text, Title, UnstyledButton } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useQuery } from '@tanstack/react-query';
@@ -50,7 +50,7 @@ export function ReportsPage() {
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
             {g.reports.filter((r) => !r.admin || can('company_admin')).map((r) => (
               <UnstyledButton key={r.key} component={Link} to={`/reports/${r.key}`}>
-                <Paper withBorder radius="md" p="sm" h="100%">
+                <Paper withBorder p="sm" h="100%">
                   <Text fw={600}>{r.title}</Text>
                   <Text size="xs" c="dimmed">{r.hint}</Text>
                 </Paper>
@@ -143,7 +143,7 @@ export function ReportViewPage({ fixedName }: { fixedName?: string } = {}) {
       {data && data.rows.length === 0 && <EmptyState title="Nothing in this period">Choose different dates.</EmptyState>}
       {data && data.rows.length > 0 && phone && <ReportCards data={data} />}
       {data && data.rows.length > 0 && (
-        <Paper withBorder radius="md" className={`${classes.tableWrap} ${phone ? classes.printOnly : ''}`}>
+        <Paper withBorder className={`${classes.tableWrap} ${phone ? classes.printOnly : ''}`}>
           <Table.ScrollContainer minWidth={Math.max(360, data.columns.length * 110)}>
             <Table fz="xs" striped stickyHeader verticalSpacing={6} className={classes.table}>
               <Table.Thead>
@@ -198,39 +198,76 @@ const linkFor = (r: Record<string, string | number | null>) =>
   r.entry_id ? `/entries/${r.entry_id}` : r.bill_id ? `/bills/${r.bill_id}` : null;
 
 /** Phone layout: one card per row, label/value pairs, empty values hidden. Printing still uses the table. */
-function ReportCards({ data }: { data: Report }) {
+const SHEET_STATUS: Record<string, string> = { Clear: 'green', Outstanding: 'orange', Shortfall: 'red', 'No activity': 'gray' };
+const isZero = (c: Column, v: unknown) => c.type === 'money' && /^-?0(\.0+)?$/.test(String(v));
+const CARD_FIELDS = 5;
+// Most useful figures first on phone cards; then other amounts; text last.
+const PRIORITY = ['bills_raised', 'installments_received', 'expenses', 'closing', 'outstanding_bill', 'shortfall',
+  'amount', 'receipt', 'payment', 'balance', 'outstanding', 'paid', 'remaining'];
+const rank = (c: Column) => {
+  const i = PRIORITY.indexOf(c.key);
+  return i >= 0 ? i : c.type === 'money' ? 50 : c.type === 'date' ? 60 : 70;
+};
+
+function ReportCard({ data, r }: { data: Report; r: Record<string, string | number | null> }) {
+  const [open, setOpen] = useState(false);
   const [first, ...rest] = data.columns;
-  const moneyTotals = rest.filter((c) => c.type === 'money' && data.totals[c.key]);
+  const statusCol = rest.find((c) => c.key === 'status');
+  const fields = rest.filter((c) => c !== statusCol && r[c.key] !== null && r[c.key] !== undefined && r[c.key] !== '' && !isZero(c, r[c.key]))
+    .sort((a, b) => rank(a) - rank(b));
+  const shown = open ? fields : fields.slice(0, CARD_FIELDS);
+  const status = statusCol ? String(r[statusCol.key] ?? '') : '';
   return (
-    <Stack gap="xs" className={classes.noPrint}>
+    <Paper withBorder p="sm" c={r.status === 'reversed' ? 'dimmed' : undefined}>
+      <Group justify="space-between" wrap="nowrap" mb={6}>
+        <Text fw={800} size="sm"><Cell c={first} v={r[first.key]} /></Text>
+        {status && (SHEET_STATUS[status]
+          ? <Badge variant="light" color={SHEET_STATUS[status]}>{status}</Badge>
+          : <Cell c={statusCol!} v={status} />)}
+      </Group>
+      <Stack gap={4}>
+        {shown.map((c) => (
+          <Group key={c.key} justify="space-between" wrap="nowrap" gap="md" align="flex-start">
+            <Text size="xs" c="dimmed" style={{ flexShrink: 0, maxWidth: '55%' }}>{c.label}</Text>
+            <Text size="sm" ta="right" fw={c.type === 'money' ? 700 : undefined} className="amount">
+              <Cell c={c} v={r[c.key]} />
+            </Text>
+          </Group>
+        ))}
+      </Stack>
+      {fields.length > CARD_FIELDS && (
+        <Anchor component="button" type="button" size="xs" mt={6}
+          onClick={(e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); setOpen((o) => !o); }}>
+          {open ? 'Show less' : `Show all (${fields.length - CARD_FIELDS} more)`}
+        </Anchor>
+      )}
+    </Paper>
+  );
+}
+
+/** Phone layout: one compact card per row; zero amounts hidden. Printing still uses the full table. */
+function ReportCards({ data }: { data: Report }) {
+  const rest = data.columns.slice(1);
+  const moneyTotals = rest.filter((c) => c.type === 'money' && data.totals[c.key] && !isZero(c, data.totals[c.key]));
+  return (
+    <Stack gap="sm" className={classes.noPrint}>
       {data.rows.map((r, i) => {
         const to = linkFor(r);
-        const card = (
-          <Paper withBorder radius="md" p="sm" c={r.status === 'reversed' ? 'dimmed' : undefined}>
-            <Text fw={700} size="sm" mb={4}><Cell c={first} v={r[first.key]} /></Text>
-            <Stack gap={2}>
-              {rest.filter((c) => r[c.key] !== null && r[c.key] !== undefined && r[c.key] !== '').map((c) => (
-                <Group key={c.key} justify="space-between" wrap="nowrap" gap="md" align="flex-start">
-                  <Text size="xs" c="dimmed" style={{ flexShrink: 0 }}>{c.label}</Text>
-                  <Text size="xs" ta="right" fw={c.type === 'money' ? 600 : undefined} style={{ wordBreak: 'break-word' }}>
-                    <Cell c={c} v={r[c.key]} />
-                  </Text>
-                </Group>
-              ))}
-            </Stack>
-          </Paper>
-        );
-        return to ? <UnstyledButton key={i} component={Link} to={to}>{card}</UnstyledButton> : <Box key={i}>{card}</Box>;
+        const card = <ReportCard data={data} r={r} />;
+        return to ? <UnstyledButton key={i} component={Link} to={to} style={{ display: 'block' }}>{card}</UnstyledButton> : <Box key={i}>{card}</Box>;
       })}
       {moneyTotals.length > 0 && (
-        <Paper withBorder radius="md" p="sm" bg="var(--mantine-color-gray-0)">
-          <Text fw={700} size="sm" mb={4}>Total</Text>
-          {moneyTotals.map((c) => (
-            <Group key={c.key} justify="space-between"><Text size="xs" c="dimmed">{c.label}</Text>
-              <Text size="xs" fw={700}>{formatINR(data.totals[c.key]!, { symbol: false })}</Text></Group>
-          ))}
+        <Paper withBorder p="sm" style={{ borderColor: 'var(--company-color)', borderWidth: 2 }}>
+          <Text fw={800} size="sm" mb={6}>Total</Text>
+          <Stack gap={4}>
+            {moneyTotals.map((c) => (
+              <Group key={c.key} justify="space-between" wrap="nowrap"><Text size="xs" c="dimmed">{c.label}</Text>
+                <Text size="sm" fw={800} className="amount">{formatINR(data.totals[c.key]!, { symbol: false })}</Text></Group>
+            ))}
+          </Stack>
         </Paper>
       )}
+      <Text size="xs" c="dimmed">Zero amounts are hidden on phones. Rotate to landscape or print to see every column.</Text>
     </Stack>
   );
 }

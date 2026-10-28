@@ -59,7 +59,7 @@ with sync_playwright() as p:
     m.get_by_role("button", name="Tick all", exact=True).click(); m.get_by_role("button", name="Complete").click()
     expect(m.get_by_text("Completed — locked")).to_be_visible(); step(f"bank reconciled to statement balance ₹{bank['balance']}")
 
-    own.goto(B + "/"); expect(own.get_by_text("Backups are overdue")).to_be_visible(); shot(own, "04-backup-banner", full=False)
+    own.goto(B + "/"); expect(own.get_by_text("No recent backup.")).to_be_visible(); shot(own, "04-backup-banner", full=False)
     own.goto(B + "/backups"); expect(own.get_by_text("No backup has ever run")).to_be_visible(); step("admin warned: no backup yet")
 
     # The owner's REAL workbook — preview only, then discarded. Never confirmed.

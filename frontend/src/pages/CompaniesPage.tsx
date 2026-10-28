@@ -29,7 +29,7 @@ export function CompaniesPage() {
   return (
     <Stack>
       <Title order={3}>{company.name}</Title>
-      <Paper withBorder radius="md" p="md">
+      <Paper withBorder p="md">
         <Text fw={700} mb="xs">Sites / branches</Text>
         <Text size="sm" c="dimmed" mb="sm">Optional locations such as Sindhudurg or Ratnagiri. Entries can be tagged by site.</Text>
         <Stack gap={4} mb="sm">
@@ -67,7 +67,7 @@ function NewCompany() {
     },
   });
   return (
-    <Paper withBorder radius="md" p="md">
+    <Paper withBorder p="md">
       <Text fw={700} mb="sm">Add company (super admin)</Text>
       <form onSubmit={form.onSubmit((v) => create.mutate(v))} noValidate>
         <Stack>

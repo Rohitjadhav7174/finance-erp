@@ -7,6 +7,7 @@ import { StatusBadge, TYPE_LABEL } from '../components/fields';
 import { MoneyFlowChart, type MonthPoint } from '../components/MoneyFlowChart';
 import { PeriodPicker, usePeriodDefaults } from '../components/PeriodPicker';
 import { useCompany } from '../context/CompanyContext';
+import { IconArrowDown, IconArrowUp, IconClock } from '../layout/icons';
 import { api } from '../lib/api';
 import { formatDate, formatINR } from '../lib/format';
 import type { Period } from '../lib/period';
@@ -25,15 +26,22 @@ interface Dashboard {
   recent_audit: { at: string; actor: string | null; table_name: string; action: string; ref: string | null; old_status: string | null; new_status: string | null }[];
 }
 
-function Tile({ label, value, hint, tone, to }: { label: string; value: string; hint?: React.ReactNode; tone?: string; to?: string }) {
+function Tile({ label, value, hint, color, icon, to }: {
+  label: string; value: string; hint?: React.ReactNode; color: string; icon: React.ReactNode; to?: string;
+}) {
   const body = (
-    <Paper withBorder radius="md" p="sm" h="100%">
-      <Text size="xs" c="dimmed">{label}</Text>
-      <Text fw={700} size="lg" c={tone}>{formatINR(value)}</Text>
-      {hint && <Text size="xs" c="dimmed">{hint}</Text>}
+    <Paper withBorder p="sm" h="100%">
+      <Group gap="sm" wrap="nowrap" align="flex-start">
+        <span className="tile-icon" style={{ background: `var(--mantine-color-${color}-0)`, color: `var(--mantine-color-${color}-9)` }}>{icon}</span>
+        <Box style={{ minWidth: 0 }}>
+          <Text size="xs" c="dimmed" fw={600}>{label}</Text>
+          <Text fw={800} size="lg" className="amount">{formatINR(value)}</Text>
+          {hint && <Text size="xs" c="dimmed">{hint}</Text>}
+        </Box>
+      </Group>
     </Paper>
   );
-  return to ? <UnstyledButton component={Link} to={to} h="100%">{body}</UnstyledButton> : body;
+  return to ? <UnstyledButton component={Link} to={to} h="100%" style={{ display: 'block' }}>{body}</UnstyledButton> : body;
 }
 
 export function HomePage() {
@@ -81,16 +89,24 @@ function CompanyDashboard({ period }: { period: Period }) {
       <Text size="xs" c="dimmed">{formatDate(period.from)} to {formatDate(period.to)}</Text>
 
       {/* Position at the end of the period */}
-      <SimpleGrid cols={{ base: 2, md: 4 }} spacing="sm">
-        <Tile label="Cash & bank balance" value={f.closing_cash} hint={`Cash ${formatINR(f.cash)} · Bank ${formatINR(f.bank)}`} to="/accounts" />
-        <Tile label="Customers owe us" value={f.receivables} hint="Unpaid customer bills" to="/bills" />
-        <Tile label="We owe suppliers" value={f.payables} hint="Unpaid supplier bills" />
-        <Tile label="Overdue installments" value={f.installments.overdue} tone={Number(f.installments.overdue) > 0 ? 'red' : undefined}
-          hint={`${f.installments.overdue_count} installment${f.installments.overdue_count === 1 ? '' : 's'}`} to="/pending" />
+      <UnstyledButton component={Link} to="/accounts" className="hero" style={{ display: 'block' }}>
+        <Text size="sm" fw={600} style={{ opacity: 0.85 }}>Cash &amp; bank balance</Text>
+        <div className="hero-amount">{formatINR(f.closing_cash)}</div>
+        <Group gap="lg" mt="sm" style={{ opacity: 0.9 }}>
+          <Text size="sm">Cash {formatINR(f.cash)}</Text>
+          <Text size="sm">Bank {formatINR(f.bank)}</Text>
+        </Group>
+      </UnstyledButton>
+      <SimpleGrid cols={{ base: 1, xs: 3 }} spacing="sm">
+        <Tile label="Customers owe us" value={f.receivables} hint="Unpaid customer bills" color="blue" icon={<IconArrowDown />} to="/bills" />
+        <Tile label="We owe suppliers" value={f.payables} hint="Unpaid supplier bills" color="orange" icon={<IconArrowUp />} />
+        <Tile label="Overdue installments" value={f.installments.overdue} color={Number(f.installments.overdue) > 0 ? 'red' : 'green'}
+          icon={<IconClock />} to="/pending"
+          hint={`${f.installments.overdue_count} installment${f.installments.overdue_count === 1 ? '' : 's'}`} />
       </SimpleGrid>
 
       {pendingTotal > 0 && (
-        <Paper withBorder radius="md" p="sm">
+        <Paper withBorder p="sm">
           <Group justify="space-between" mb={6}>
             <Text fw={700}>Pending work</Text>
             <Anchor component={Link} to="/pending" size="sm">Open</Anchor>
@@ -106,14 +122,14 @@ function CompanyDashboard({ period }: { period: Period }) {
       )}
 
       {/* Cash movement (what physically moved) */}
-      <Paper withBorder radius="md" p="sm">
+      <Paper withBorder p="sm">
         <Text fw={700}>Cash movement</Text>
         <Text size="xs" c="dimmed" mb="xs">Money that actually came in or went out of cash and bank. Transfers between your own accounts are not counted.</Text>
         <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="xs" mb="sm">
-          <Stack gap={0}><Text size="xs" c="dimmed">Opening</Text><Text fw={600}>{formatINR(f.opening_cash)}</Text></Stack>
-          <Stack gap={0}><Text size="xs" c="dimmed">Money in</Text><Text fw={600}>{formatINR(f.money_in)}</Text></Stack>
-          <Stack gap={0}><Text size="xs" c="dimmed">Money out</Text><Text fw={600}>{formatINR(f.money_out)}</Text></Stack>
-          <Stack gap={0}><Text size="xs" c="dimmed">Closing</Text><Text fw={600}>{formatINR(f.closing_cash)}</Text></Stack>
+          <Stack gap={0}><Text size="xs" c="dimmed" fw={600}>Opening</Text><Text fw={700} className="amount">{formatINR(f.opening_cash)}</Text></Stack>
+          <Stack gap={0}><Text size="xs" c="dimmed" fw={600}>Money in</Text><Text fw={700} className="amount">{formatINR(f.money_in)}</Text></Stack>
+          <Stack gap={0}><Text size="xs" c="dimmed" fw={600}>Money out</Text><Text fw={700} className="amount">{formatINR(f.money_out)}</Text></Stack>
+          <Stack gap={0}><Text size="xs" c="dimmed" fw={600}>Closing</Text><Text fw={700} className="amount">{formatINR(f.closing_cash)}</Text></Stack>
         </SimpleGrid>
         {Number(f.other_movement) !== 0 && (
           <Text size="xs" c="dimmed" mt={-6} mb="sm">
@@ -124,29 +140,29 @@ function CompanyDashboard({ period }: { period: Period }) {
       </Paper>
 
       {/* Earnings (accounting) — kept separate from cash on purpose */}
-      <Paper withBorder radius="md" p="sm">
+      <Paper withBorder p="sm">
         <Text fw={700}>Income &amp; expenses</Text>
         <Text size="xs" c="dimmed" mb="xs">Income is counted when a bill is raised, not when installments are collected.</Text>
         <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="xs">
-          <Stack gap={0}><Text size="xs" c="dimmed">Bills raised</Text><Text fw={600}>{formatINR(f.bills_raised)}</Text></Stack>
-          <Stack gap={0}><Text size="xs" c="dimmed">Income</Text><Text fw={600}>{formatINR(f.income)}</Text></Stack>
-          <Stack gap={0}><Text size="xs" c="dimmed">Expenses</Text><Text fw={600}>{formatINR(f.expenses)}</Text></Stack>
-          <Stack gap={0}><Text size="xs" c="dimmed">{Number(f.surplus) >= 0 ? 'Surplus' : 'Deficit'}</Text><Text fw={600}>{formatINR(f.surplus.replace('-', ''))}</Text></Stack>
+          <Stack gap={0}><Text size="xs" c="dimmed" fw={600}>Bills raised</Text><Text fw={700} className="amount">{formatINR(f.bills_raised)}</Text></Stack>
+          <Stack gap={0}><Text size="xs" c="dimmed" fw={600}>Income</Text><Text fw={700} className="amount">{formatINR(f.income)}</Text></Stack>
+          <Stack gap={0}><Text size="xs" c="dimmed" fw={600}>Expenses</Text><Text fw={700} className="amount">{formatINR(f.expenses)}</Text></Stack>
+          <Stack gap={0}><Text size="xs" c="dimmed" fw={600}>{Number(f.surplus) >= 0 ? 'Surplus' : 'Deficit'}</Text><Text fw={700} className="amount">{formatINR(f.surplus.replace('-', ''))}</Text></Stack>
         </SimpleGrid>
       </Paper>
 
-      <Paper withBorder radius="md" p="sm">
+      <Paper withBorder p="sm">
         <Text fw={700} mb="xs">Installments</Text>
         <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="xs">
-          <Stack gap={0}><Text size="xs" c="dimmed">Due in period</Text><Text fw={600}>{formatINR(f.installments.due_in_period)}</Text></Stack>
-          <Stack gap={0}><Text size="xs" c="dimmed">Collected of that</Text><Text fw={600}>{formatINR(f.installments.collected_of_due)}</Text></Stack>
-          <Stack gap={0}><Text size="xs" c="dimmed">Due next 30 days</Text><Text fw={600}>{formatINR(f.installments.upcoming_30)}</Text></Stack>
-          <Stack gap={0}><Text size="xs" c="dimmed">Still to collect</Text><Text fw={600}>{formatINR(f.installments.remaining)}</Text></Stack>
+          <Stack gap={0}><Text size="xs" c="dimmed" fw={600}>Due in period</Text><Text fw={700} className="amount">{formatINR(f.installments.due_in_period)}</Text></Stack>
+          <Stack gap={0}><Text size="xs" c="dimmed" fw={600}>Collected of that</Text><Text fw={700} className="amount">{formatINR(f.installments.collected_of_due)}</Text></Stack>
+          <Stack gap={0}><Text size="xs" c="dimmed" fw={600}>Due next 30 days</Text><Text fw={700} className="amount">{formatINR(f.installments.upcoming_30)}</Text></Stack>
+          <Stack gap={0}><Text size="xs" c="dimmed" fw={600}>Still to collect</Text><Text fw={700} className="amount">{formatINR(f.installments.remaining)}</Text></Stack>
         </SimpleGrid>
         {Number(f.advances) > 0 && <Text size="xs" c="dimmed" mt="xs">Customer advances held (not income yet): {formatINR(f.advances)}</Text>}
       </Paper>
 
-      <Paper withBorder radius="md" p="sm">
+      <Paper withBorder p="sm">
         <Group justify="space-between" mb="xs"><Text fw={700}>Recent entries</Text><Anchor component={Link} to="/entries" size="sm">All</Anchor></Group>
         {data.recent_entries.length === 0 && <EmptyState title="No entries yet">Tap + to record money received or paid.</EmptyState>}
         {data.recent_entries.map((e) => (
@@ -166,7 +182,7 @@ function CompanyDashboard({ period }: { period: Period }) {
       </Paper>
 
       {can('company_admin') && data.recent_audit.length > 0 && (
-        <Paper withBorder radius="md" p="sm">
+        <Paper withBorder p="sm">
           <Group justify="space-between" mb="xs"><Text fw={700}>Recent activity</Text><Anchor component={Link} to="/reports/audit" size="sm">Audit log</Anchor></Group>
           {data.recent_audit.map((a, i) => (
             <Text key={i} size="xs" c="dimmed">
@@ -200,7 +216,7 @@ function Consolidated({ period }: { period: Period }) {
   if (isLoading) return <Loader />;
   if (error || !data) return <Alert color="red">{(error as Error)?.message}</Alert>;
   return (
-    <Paper withBorder radius="md" p="sm">
+    <Paper withBorder p="sm">
       <Table.ScrollContainer minWidth={360}>
         <Table fz="sm" striped>
           <Table.Thead>

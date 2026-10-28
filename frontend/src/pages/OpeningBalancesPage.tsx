@@ -57,7 +57,7 @@ export function OpeningBalancesPage() {
       {rows.map((r, i) => {
         const acc = byId(r.account_id);
         return (
-          <Paper key={i} withBorder radius="md" p="sm">
+          <Paper key={i} withBorder p="sm">
             <Group align="flex-end" wrap="nowrap" gap="xs">
               <Select label="Account" size="md" style={{ flex: 1 }} value={r.account_id} allowDeselect={false}
                 data={usable.map((a) => ({ value: a.id, label: accountLabel(a) }))}
@@ -75,7 +75,7 @@ export function OpeningBalancesPage() {
         );
       })}
       <Button variant="light" onClick={() => setRows((r) => [...r, { account_id: null, party_id: null, amount: '' }])}>+ Add another balance</Button>
-      <Paper withBorder radius="md" p="sm">
+      <Paper withBorder p="sm">
         <Group justify="space-between"><Text size="sm">We have / are owed</Text><Text fw={600}>{formatINR(debit)}</Text></Group>
         <Group justify="space-between"><Text size="sm">We owe</Text><Text fw={600}>{formatINR(credit)}</Text></Group>
       </Paper>

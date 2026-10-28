@@ -20,7 +20,7 @@ export function AccountsPage() {
     <Stack maw={720}>
       <Title order={3}>Accounts &amp; categories</Title>
       {GROUPS.map((g) => (
-        <Paper key={g.title} withBorder radius="md" p="md">
+        <Paper key={g.title} withBorder p="md">
           <Text fw={700}>{g.title}</Text>
           <Text size="xs" c="dimmed" mb="xs">{g.hint}</Text>
           {(data ?? []).filter(g.match).map((a) => (
@@ -54,7 +54,7 @@ function NewAccount({ companyId }: { companyId: string }) {
     },
   });
   return (
-    <Paper withBorder radius="md" p="md">
+    <Paper withBorder p="md">
       <Text fw={700} mb="sm">Add</Text>
       <Stack>
         <SegmentedControl value={kind} onChange={setKind}

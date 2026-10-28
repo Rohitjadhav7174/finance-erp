@@ -55,7 +55,7 @@ export function SearchPage() {
           <Section title="Entries" count={data.entries.length}>
             {data.entries.map((e) => (
               <UnstyledButton key={e.id} component={Link} to={`/entries/${e.id}`} onClick={() => open(e.company_code)}>
-                <Paper withBorder radius="md" p="sm">
+                <Paper withBorder p="sm">
                   <Group justify="space-between" wrap="nowrap">
                     <Box style={{ minWidth: 0 }}>
                       <Group gap={6}>{tag(e.company_code)}<Text size="sm" fw={600} truncate>{e.party_name ?? e.description}</Text></Group>
@@ -70,7 +70,7 @@ export function SearchPage() {
           <Section title="Bills" count={data.bills.length}>
             {data.bills.map((b) => (
               <UnstyledButton key={b.id} component={Link} to={`/bills/${b.id}`} onClick={() => open(b.company_code)}>
-                <Paper withBorder radius="md" p="sm">
+                <Paper withBorder p="sm">
                   <Group justify="space-between" wrap="nowrap">
                     <Box style={{ minWidth: 0 }}>
                       <Group gap={6}>{tag(b.company_code)}<Text size="sm" fw={600} truncate>{b.party_name}</Text></Group>
@@ -84,7 +84,7 @@ export function SearchPage() {
           </Section>
           <Section title="Parties" count={data.parties.length}>
             {data.parties.map((p) => (
-              <Paper key={p.id} withBorder radius="md" p="sm">
+              <Paper key={p.id} withBorder p="sm">
                 <Group gap={6}>{tag(p.company_code)}<Text size="sm" fw={600}>{p.name}</Text></Group>
                 <Text size="xs" c="dimmed">{p.kind}{p.phone ? ` · ${p.phone}` : ''}</Text>
               </Paper>
