@@ -1,4 +1,4 @@
-import { Box, Center, Paper, Stack, Text, Title, UnstyledButton } from '@mantine/core';
+import { Box, Center, Group, Paper, Stack, Text, Title, UnstyledButton } from '@mantine/core';
 import { useCompany } from '../context/CompanyContext';
 import { ROLE_LABELS } from '../lib/format';
 
@@ -12,9 +12,16 @@ export function CompanyPicker() {
         <Text c="dimmed" size="sm">Everything you enter will be recorded in the company you choose.</Text>
         {me?.companies.map((c) => (
           <UnstyledButton key={c.id} onClick={() => selectCompany(c.id)} aria-label={`Open ${c.name}`}>
-            <Paper withBorder p="md" radius="md" style={{ borderLeft: `6px solid ${c.theme_color}` }}>
-              <Text fw={700}>{c.name}</Text>
-              <Text size="sm" c="dimmed">{ROLE_LABELS[c.role]}</Text>
+            <Paper withBorder p="md">
+              <Group wrap="nowrap">
+                <Box className="tile-icon" style={{ background: c.theme_color, color: '#fff', fontWeight: 700, width: 44, height: 44 }}>
+                  {c.code}
+                </Box>
+                <Box style={{ minWidth: 0 }}>
+                  <Text fw={700}>{c.name}</Text>
+                  <Text size="sm" c="dimmed">{ROLE_LABELS[c.role]}</Text>
+                </Box>
+              </Group>
             </Paper>
           </UnstyledButton>
         ))}

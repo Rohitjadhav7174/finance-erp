@@ -57,11 +57,13 @@ export function HomePage() {
           <Text c="dimmed" size="sm">Namaste, {me.profile.full_name.split(' ')[0]}</Text>
           <Title order={3}>{scope === 'all' ? 'All companies' : company.name}</Title>
         </div>
-        <PeriodPicker value={period} onChange={setPeriod} />
+        <Group gap="xs" wrap="wrap" w={{ base: '100%', xs: 'auto' }}>
+          <PeriodPicker value={period} onChange={setPeriod} />
+          {can('data_entry') && scope === 'company' && (
+            <Button component={Link} to="/entry" size="md" color={company.theme_color} w={{ base: '100%', xs: 'auto' }}>+ Monthly entry</Button>
+          )}
+        </Group>
       </Group>
-      {can('data_entry') && scope === 'company' && (
-        <Button component={Link} to="/entry" size="lg" color={company.theme_color} fullWidth>+ Monthly entry</Button>
-      )}
       {consolidatedAllowed && (
         <SegmentedControl value={scope} onChange={setScope}
           data={[{ value: 'company', label: company.code }, { value: 'all', label: 'All companies' }]} />
@@ -90,12 +92,12 @@ function CompanyDashboard({ period }: { period: Period }) {
 
       {/* Position at the end of the period */}
       <UnstyledButton component={Link} to="/accounts" className="hero" style={{ display: 'block' }}>
-        <Text size="sm" fw={600} style={{ opacity: 0.85 }}>Cash &amp; bank balance</Text>
+        <div className="hero-label">Cash &amp; bank balance</div>
         <div className="hero-amount">{formatINR(f.closing_cash)}</div>
-        <Group gap="lg" mt="sm" style={{ opacity: 0.9 }}>
-          <Text size="sm">Cash {formatINR(f.cash)}</Text>
-          <Text size="sm">Bank {formatINR(f.bank)}</Text>
-        </Group>
+        <div className="hero-split">
+          <span>Cash <b>{formatINR(f.cash)}</b></span>
+          <span>Bank <b>{formatINR(f.bank)}</b></span>
+        </div>
       </UnstyledButton>
       <SimpleGrid cols={{ base: 1, xs: 3 }} spacing="sm">
         <Tile label="Customers owe us" value={f.receivables} hint="Unpaid customer bills" color="blue" icon={<IconArrowDown />} to="/bills" />

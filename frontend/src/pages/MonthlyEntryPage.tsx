@@ -173,7 +173,7 @@ export function MonthlyEntryPage() {
           <DateField label="Period To" value={periodTo} onChange={(e) => setPeriodTo(e.currentTarget.value)} />
           <Calc label="Period Shortfall (₹)" value={formatINR(shortfall)} tone={toPaise(shortfall) > 0n ? 'red.9' : undefined} />
           <Calc label="Status">
-            <Badge mt={6} size="lg" variant="filled" color={status === 'Clear' ? 'green.8' : 'red.8'}>{status}</Badge>
+            <Badge mt={6} size="lg" variant="filled" color={status === 'Clear' ? '#1e6b30' : '#c92a2a'}>{status}</Badge>
           </Calc>
         </SimpleGrid>
       </Paper>

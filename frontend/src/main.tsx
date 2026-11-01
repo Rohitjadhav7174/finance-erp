@@ -1,3 +1,4 @@
+import '@fontsource-variable/inter';
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
 import './design.css';
@@ -36,15 +37,18 @@ import { UsersPage } from './pages/UsersPage';
 // Accessibility (WCAG AA, 4.5:1 for small text): one shade darker than Mantine's default for
 // every colour, and a darker "dimmed" grey (#868e96 is only 3.3:1 on white).
 const theme = createTheme({
-  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif',
+  fontFamily: '"Inter Variable", system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif',
   defaultRadius: 'md',
   primaryColor: 'blue',
   primaryShade: { light: 8, dark: 6 },
-  headings: { fontWeight: '700' },
+  headings: { fontFamily: '"Inter Variable", system-ui, sans-serif', fontWeight: '700' },
+  shadows: { xs: '0 1px 2px rgb(16 24 40 / 0.04)', sm: '0 1px 3px rgb(16 24 40 / 0.06)', md: '0 4px 14px rgb(16 24 40 / 0.08)' },
   components: {
     Paper: { defaultProps: { radius: 'lg' } },
     Button: { defaultProps: { radius: 'md' } },
-    Badge: { defaultProps: { radius: 'sm' } },
+    Badge: { defaultProps: { radius: 'sm' }, styles: { root: { textTransform: 'none', fontWeight: 600 } } },
+    Modal: { defaultProps: { radius: 'lg', centered: true } },
+    Menu: { defaultProps: { radius: 'md', shadow: 'md' } },
   },
 });
 

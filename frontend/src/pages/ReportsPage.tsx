@@ -12,6 +12,8 @@ import { api, download } from '../lib/api';
 import { formatDate, formatINR } from '../lib/format';
 import { accountLabel, useAccounts } from '../lib/hooks';
 import type { Period } from '../lib/period';
+import { MenuGroup, MenuRow } from '../components/MenuList';
+import { IconBook, IconScale, IconShield, IconUsers } from '../layout/icons';
 import classes from './reports.module.css';
 
 interface ReportMeta { key: string; title: string; hint: string; admin?: boolean; asOf?: boolean }
@@ -39,27 +41,32 @@ const GROUPS: { title: string; reports: ReportMeta[] }[] = [
 ];
 const ALL = Object.fromEntries(GROUPS.flatMap((g) => g.reports).map((r) => [r.key, r]));
 
+const GROUP_STYLE: Record<string, { color: string; icon: React.ReactNode }> = {
+  Balances: { color: 'blue', icon: <IconScale /> },
+  Books: { color: 'teal', icon: <IconBook /> },
+  'Customers & suppliers': { color: 'orange', icon: <IconUsers /> },
+  Control: { color: 'grape', icon: <IconShield /> },
+};
+
 export function ReportsPage() {
   const { can } = useCompany();
   return (
-    <Stack maw={900}>
-      <Title order={3}>Reports</Title>
-      {GROUPS.map((g) => (
-        <Stack key={g.title} gap="xs">
-          <Text fw={700} size="sm" c="dimmed">{g.title}</Text>
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
+    <Stack maw={960} gap="lg">
+      <div>
+        <Title order={3}>Reports</Title>
+        <Text size="sm" c="dimmed">Download as Excel or CSV, or print / save as PDF.</Text>
+      </div>
+      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" verticalSpacing="lg">
+        {GROUPS.map((g) => (
+          <MenuGroup key={g.title} title={g.title}>
             {g.reports.filter((r) => !r.admin || can('company_admin')).map((r) => (
-              <UnstyledButton key={r.key} component={Link} to={`/reports/${r.key}`}>
-                <Paper withBorder p="sm" h="100%">
-                  <Text fw={600}>{r.title}</Text>
-                  <Text size="xs" c="dimmed">{r.hint}</Text>
-                </Paper>
-              </UnstyledButton>
+              <MenuRow key={r.key} to={`/reports/${r.key}`} label={r.title} description={r.hint}
+                icon={GROUP_STYLE[g.title].icon} color={GROUP_STYLE[g.title].color} />
             ))}
-          </SimpleGrid>
-        </Stack>
-      ))}
-      <Text size="xs" c="dimmed">Every report shows only the company you are in and the dates you choose. Download as Excel or CSV, or print / save as PDF.</Text>
+          </MenuGroup>
+        ))}
+      </SimpleGrid>
+      <Text size="xs" c="dimmed">Every report shows only the company you are in and the dates you choose.</Text>
     </Stack>
   );
 }

@@ -1,4 +1,4 @@
-import { ActionIcon, AppShell, Badge, Box, Button, Center, Group, Loader, Menu, NavLink, Stack, Text, UnstyledButton } from '@mantine/core';
+import { ActionIcon, AppShell, Avatar, Box, Button, Center, Group, Loader, Menu, Stack, Text, UnstyledButton } from '@mantine/core';
 import type { ReactNode } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
@@ -6,7 +6,7 @@ import { CompanyPicker } from '../components/CompanyPicker';
 import { BackupBanner } from '../pages/BackupsPage';
 import { useCompany } from '../context/CompanyContext';
 import { ROLE_LABELS } from '../lib/format';
-import { IconChart, IconChevron, IconHome, IconList, IconLogout, IconMenu, IconPlus, IconSearch } from './icons';
+import { IconChart, IconCheck, IconChevron, IconHome, IconList, IconLogout, IconMenu, IconPlus, IconSearch } from './icons';
 import classes from './AppLayout.module.css';
 
 interface NavItem { to: string; label: string; icon: ReactNode; adminOnly?: boolean }
@@ -20,26 +20,56 @@ const MAIN_NAV: NavItem[] = [
   { to: '/more', label: 'More', icon: <IconMenu /> },
 ];
 
+const initials = (name: string) => name.split(/\s+/).filter((w) => /^[A-Za-z]/.test(w)).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+
 function CompanySwitcher() {
   const { me, company, selectCompany } = useCompany();
   if (!me || !company) return null;
   return (
-    <Menu position="bottom-start" width={260} disabled={me.companies.length < 2}>
+    <Menu position="bottom-start" width={280} disabled={me.companies.length < 2}>
       <Menu.Target>
-        <UnstyledButton className={classes.companyButton} style={{ borderColor: company.theme_color }}
-          aria-label={`Current company ${company.name}. Change company`}>
-          <Box className={classes.companyDot} style={{ background: company.theme_color }} />
-          <Text fw={700} truncate maw={180}>{company.name}</Text>
-          {me.companies.length > 1 && <IconChevron size={16} />}
+        <UnstyledButton className={classes.companyButton} aria-label={`Current company ${company.name}. Change company`}>
+          <span className={classes.brandMark} style={{ background: company.theme_color }}>{company.code}</span>
+          <Box style={{ minWidth: 0 }}>
+            <Text fw={700} size="sm" truncate maw={200} lh={1.2}>{company.name}</Text>
+            <Text size="xs" c="dimmed" lh={1.2}>{ROLE_LABELS[company.role]}</Text>
+          </Box>
+          {me.companies.length > 1 && <IconChevron size={16} className={classes.chevron} />}
         </UnstyledButton>
       </Menu.Target>
       <Menu.Dropdown>
+        <Menu.Label>Switch company</Menu.Label>
         {me.companies.map((c) => (
           <Menu.Item key={c.id} onClick={() => selectCompany(c.id)}
-            leftSection={<Box className={classes.companyDot} style={{ background: c.theme_color }} />}>
+            leftSection={<span className={classes.brandMarkSmall} style={{ background: c.theme_color }}>{c.code}</span>}
+            rightSection={c.id === company.id ? <IconCheck size={16} /> : null}>
             {c.name}
           </Menu.Item>
         ))}
+      </Menu.Dropdown>
+    </Menu>
+  );
+}
+
+function UserMenu() {
+  const { me, company } = useCompany();
+  const { signOut } = useAuth();
+  if (!me || !company) return null;
+  return (
+    <Menu position="bottom-end" width={240}>
+      <Menu.Target>
+        <UnstyledButton aria-label="Your account">
+          <Avatar size={34} radius="xl" color={company.theme_color} variant="light">{initials(me.profile.full_name)}</Avatar>
+        </UnstyledButton>
+      </Menu.Target>
+      <Menu.Dropdown>
+        <Box px="sm" py={6}>
+          <Text size="sm" fw={600} truncate>{me.profile.full_name}</Text>
+          <Text size="xs" c="dimmed" truncate>{me.profile.email}</Text>
+        </Box>
+        <Menu.Divider />
+        <Menu.Item component={Link} to="/more" leftSection={<IconMenu size={16} />}>All menus</Menu.Item>
+        <Menu.Item color="red" leftSection={<IconLogout size={16} />} onClick={signOut}>Sign out</Menu.Item>
       </Menu.Dropdown>
     </Menu>
   );
@@ -80,29 +110,37 @@ export function AppLayout() {
   const active = (to: string) => (to === '/' ? pathname === '/' : pathname.startsWith(to));
 
   return (
-    <AppShell header={{ height: 56 }} navbar={{ width: 240, breakpoint: 'sm', collapsed: { mobile: true } }}
+    <AppShell header={{ height: 60 }} navbar={{ width: 248, breakpoint: 'sm', collapsed: { mobile: true } }}
       padding="md" className={classes.shell} style={{ '--company-color': company.theme_color } as React.CSSProperties}>
       <AppShell.Header className={classes.header}>
         <Group h="100%" px="md" justify="space-between" wrap="nowrap">
           <CompanySwitcher />
-          <Group gap="xs" wrap="nowrap">
-            <Badge variant="light" color="gray" visibleFrom="xs">{ROLE_LABELS[company.role]}</Badge>
-            <ActionIcon component={Link} to="/search" variant="subtle" color="gray" size="lg" aria-label="Search">
-              <IconSearch />
+          <Group gap={6} wrap="nowrap">
+            <ActionIcon component={Link} to="/search" variant="subtle" color="gray" size="lg" radius="xl" aria-label="Search">
+              <IconSearch size={20} />
             </ActionIcon>
+            <UserMenu />
           </Group>
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar p="sm" visibleFrom="sm">
-        <Stack gap={4} h="100%">
+      <AppShell.Navbar p="sm" visibleFrom="sm" className={classes.navbar}>
+        <Stack gap={2} h="100%">
+          <Text className={classes.navLabel}>Menu</Text>
           {nav.map((n) => (
-            <NavLink key={n.to} component={Link} to={n.to} label={n.label} leftSection={n.icon} active={active(n.to)}
-              color={company.theme_color} variant="light" fw={600} style={{ borderRadius: 10 }} />
+            <UnstyledButton key={n.to} component={Link} to={n.to} className={classes.navItem}
+              data-active={active(n.to) || undefined} aria-current={active(n.to) ? 'page' : undefined}>
+              {n.icon}<span>{n.label}</span>
+            </UnstyledButton>
           ))}
-          <Box mt="auto" />
-          <Text size="sm" fw={600} truncate>{me.profile.full_name}</Text>
-          <NavLink label="Sign out" leftSection={<IconLogout />} onClick={signOut} />
+          <Box mt="auto" className={classes.navUser}>
+            <Avatar size={32} radius="xl" color={company.theme_color} variant="light">{initials(me.profile.full_name)}</Avatar>
+            <Box style={{ minWidth: 0, flex: 1 }}>
+              <Text size="sm" fw={600} truncate>{me.profile.full_name}</Text>
+              <Text size="xs" c="dimmed" truncate>{ROLE_LABELS[company.role]}</Text>
+            </Box>
+            <ActionIcon variant="subtle" color="gray" onClick={signOut} aria-label="Sign out"><IconLogout size={18} /></ActionIcon>
+          </Box>
         </Stack>
       </AppShell.Navbar>
 
@@ -117,8 +155,9 @@ export function AppLayout() {
         <BottomLink to="/register" label="Register" icon={<IconList />} active={active('/register')} />
         {can('data_entry') ? (
           <button type="button" className={classes.fab} onClick={() => navigate('/entry')} aria-label="New monthly entry"
-            style={{ background: company.theme_color }}>
-            <IconPlus size={28} />
+            data-active={active('/entry') || undefined}>
+            <span style={{ background: company.theme_color }}><IconPlus size={22} /></span>
+            Entry
           </button>
         ) : <span className={classes.fabSpacer} />}
         <BottomLink to="/reports" label="Reports" icon={<IconChart />} active={active('/reports')} />
