@@ -19,7 +19,7 @@ export function MorePage() {
       <Title order={3}>More</Title>
       <Paper withBorder p="md">
         <Group wrap="nowrap">
-          <Avatar size={48} radius="xl" color="violet" variant="light">
+          <Avatar size={48} radius="xl" color="brand" variant="light">
             {name.split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase()}
           </Avatar>
           <Box style={{ minWidth: 0 }}>
@@ -51,7 +51,7 @@ export function MorePage() {
           <MenuGroup title="Setup">
             <MenuRow to="/accounts" label="Accounts & categories" description="Cash, bank, expense types" icon={<IconBook />} color="blue" />
             {can('accountant') && <MenuRow to="/imports" label="Import from Excel" icon={<IconUpload />} color="green" />}
-            {admin && <MenuRow to="/opening-balances" label="Opening balances" icon={<IconScale />} color="violet" />}
+            {admin && <MenuRow to="/opening-balances" label="Opening balances" icon={<IconScale />} color="brand" />}
             {admin && <MenuRow to="/users" label="Employees" description="Who can sign in and what they can do" icon={<IconUsers />} color="grape" />}
             {admin && <MenuRow to="/companies" label="Companies & sites" icon={<IconBuilding />} color="gray" />}
             {admin && me.profile.is_super_admin && <MenuRow to="/backups" label="Backups" icon={<IconDatabase />} color="gray" />}

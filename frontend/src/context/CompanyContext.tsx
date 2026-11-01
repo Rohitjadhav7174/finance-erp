@@ -59,7 +59,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   }, [me, selectedId]);
 
   useEffect(() => {
-    if (company) document.querySelector('meta[name=theme-color]')?.setAttribute('content', '#4c3fd8');
+    if (company) document.querySelector('meta[name=theme-color]')?.setAttribute('content', '#0f766e');
   }, [company]);
 
   const selectCompany = (id: string) => {

@@ -1,9 +1,8 @@
-/* Purple gradient header; the thin stripe underneath is the company's own colour. */
+/* White header; the thin stripe underneath is the company's own colour. */
 .header {
-  background: var(--brand-gradient);
-  color: #fff;
+  background: rgb(255 255 255 / 0.96);
+  backdrop-filter: saturate(180%) blur(10px);
   border-bottom: 3px solid var(--company-color);
-  --mantine-color-dimmed: rgb(255 255 255 / 0.8);
 }
 
 .companyButton {
@@ -14,11 +13,10 @@
   border-radius: 12px;
   min-height: 44px;
   min-width: 0;
-  color: #fff;
   transition: background 0.12s ease;
 }
 .companyButton:hover {
-  background: rgb(255 255 255 / 0.12);
+  background: #f1f6f4;
 }
 
 .brandMark,
@@ -31,7 +29,6 @@
   letter-spacing: 0.02em;
 }
 .brandMark {
-  box-shadow: 0 0 0 2px rgb(255 255 255 / 0.9);
   width: 36px;
   height: 36px;
   border-radius: 10px;
@@ -82,7 +79,7 @@
   color: #6b7280;
 }
 .navItem:hover {
-  background: #f6f3ff;
+  background: #f1f6f4;
 }
 .navItem[data-active] {
   background: var(--accent-soft);
@@ -190,7 +187,7 @@
   border-radius: 10px;
   color: #fff;
   background: var(--brand-gradient);
-  box-shadow: 0 3px 10px rgb(103 65 217 / 0.35);
+  box-shadow: 0 3px 10px rgb(15 118 110 / 0.3);
 }
 .fab[data-active] {
   color: color-mix(in srgb, var(--accent) 80%, #000);

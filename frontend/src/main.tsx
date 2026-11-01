@@ -39,7 +39,11 @@ import { UsersPage } from './pages/UsersPage';
 const theme = createTheme({
   fontFamily: '"Inter Variable", system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif',
   defaultRadius: 'md',
-  primaryColor: 'violet',
+  primaryColor: 'brand',
+  colors: {
+    // Finance teal; shade 8 (#0f766e) keeps white button text above 5:1.
+    brand: ['#effcf9', '#d5f5ee', '#aeeadf', '#7ddacb', '#4cc3b3', '#26a99a', '#14917f', '#0f8072', '#0f766e', '#115e59'],
+  },
   primaryShade: { light: 8, dark: 6 },
   headings: { fontFamily: '"Inter Variable", system-ui, sans-serif', fontWeight: '700' },
   shadows: { xs: '0 1px 2px rgb(16 24 40 / 0.04)', sm: '0 1px 3px rgb(16 24 40 / 0.06)', md: '0 4px 14px rgb(16 24 40 / 0.08)' },
@@ -55,7 +59,7 @@ const theme = createTheme({
 // Text on tinted ("light" variant) badges, alerts and buttons uses shade 9 so it stays >= 4.5:1.
 const LIGHT_TEXT: Record<string, string> = {
   blue: '#1864ab', red: '#c92a2a', orange: '#a63a06', yellow: '#7a5200', green: '#1e6b30', teal: '#087f5b',
-  cyan: '#0b7285', grape: '#862e9c', gray: '#495057', violet: '#5f3dc4',
+  cyan: '#0b7285', brand: '#115e59', grape: '#862e9c', gray: '#495057', violet: '#5f3dc4',
 };
 const cssVariablesResolver: CSSVariablesResolver = () => ({
   variables: {},
