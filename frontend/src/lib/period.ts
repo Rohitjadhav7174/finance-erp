@@ -32,3 +32,13 @@ export const PRESETS: { value: PresetKey; label: string }[] = [
   { value: 'last_fy', label: 'Last financial year' },
   { value: 'custom', label: 'Custom dates' },
 ];
+
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+/** "May 2026", "May – June 2026" or "December 2025 – January 2026", like the Period column in the sheet. */
+export function periodLabel(from: string, to: string) {
+  const [fy, fm] = from.split('-').map(Number); const [ty, tm] = to.split('-').map(Number);
+  if (!fy || !fm) return '';
+  if (!ty || !tm || (fy === ty && fm === tm)) return `${MONTHS[fm - 1]} ${fy}`;
+  return fy === ty ? `${MONTHS[fm - 1]} – ${MONTHS[tm - 1]} ${ty}` : `${MONTHS[fm - 1]} ${fy} – ${MONTHS[tm - 1]} ${ty}`;
+}

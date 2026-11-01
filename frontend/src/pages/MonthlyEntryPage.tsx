@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Anchor, Badge, Box, Button, Group, Paper, Select, SimpleGrid, Stack, Text, TextInput, Title } from '@mantine/core';
+import { ActionIcon, Alert, Anchor, Badge, Box, Button, Group, Input, Paper, Select, SimpleGrid, Stack, Text, TextInput, Title } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
@@ -7,6 +7,7 @@ import { AmountInput, DateField } from '../components/fields';
 import { useCompany } from '../context/CompanyContext';
 import { api, ApiError, json } from '../lib/api';
 import { formatINR } from '../lib/format';
+import { periodLabel } from '../lib/period';
 import { byType, useAccounts, useParties } from '../lib/hooks';
 import { cleanAmount, fromPaise, isAmount, sumAmounts, todayISO, toPaise } from '../lib/money';
 
@@ -125,12 +126,21 @@ export function MonthlyEntryPage() {
       <div className="entry-grid">
       <Paper withBorder p="md">
         <div className="section-title"><span>1</span>Period</div>
-        <SimpleGrid cols={{ base: 1, xs: 2, md: 3 }}>
-          <TextInput type="month" label="Period" size="md" value={periodFrom.slice(0, 7)}
-            onChange={(e) => { const v = e.currentTarget.value; if (v) { setPeriodFrom(`${v}-01`); setPeriodTo(monthEnd(`${v}-01`)); } }} />
-          <DateField label="Date" value={date} onChange={(e) => setDate(e.currentTarget.value)} />
-          <Calc label="Opening Balance (₹)" value={formatINR(openingCash)} />
-        </SimpleGrid>
+        <Stack gap="sm">
+          <Input.Wrapper label="Period" description={<Text span fw={700} c="dark" size="sm">{periodLabel(periodFrom, periodTo)}</Text>}>
+            <SimpleGrid cols={{ base: 1, xs: 2 }} mt={6} spacing="xs">
+              <TextInput type="month" size="md" label="From month" styles={{ input: { minWidth: 0 } }} value={periodFrom.slice(0, 7)}
+                onChange={(e) => { const v = e.currentTarget.value; if (!v) return; setPeriodFrom(`${v}-01`); if (periodTo.slice(0, 7) < v) setPeriodTo(monthEnd(`${v}-01`)); }} />
+              <TextInput type="month" size="md" label="To month" styles={{ input: { minWidth: 0 } }} value={periodTo.slice(0, 7)}
+                min={periodFrom.slice(0, 7)}
+                onChange={(e) => { const v = e.currentTarget.value; if (!v) return; setPeriodTo(monthEnd(`${v}-01`)); if (v < periodFrom.slice(0, 7)) setPeriodFrom(`${v}-01`); }} />
+            </SimpleGrid>
+          </Input.Wrapper>
+          <SimpleGrid cols={{ base: 1, xs: 2 }}>
+            <DateField label="Date" value={date} onChange={(e) => setDate(e.currentTarget.value)} />
+            <Calc label="Opening Balance (₹)" value={formatINR(openingCash)} />
+          </SimpleGrid>
+        </Stack>
       </Paper>
 
       <Paper withBorder p="md">
