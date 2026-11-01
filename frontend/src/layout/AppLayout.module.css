@@ -119,6 +119,11 @@
   }
 }
 
+/* Full-screen form: room only for its own sticky save bar */
+.mainFocus {
+  padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+}
+
 .bottomNav {
   position: fixed;
   left: 0;

@@ -107,10 +107,12 @@ export function AppLayout() {
   if (!company) return <CompanyPicker />;
 
   const nav = MAIN_NAV.filter((n) => n.to !== '/entry' || can('data_entry'));
+  // The monthly entry form opens full screen: no sidebar or bottom bar, only the header with the company.
+  const focus = pathname === '/entry';
   const active = (to: string) => (to === '/' ? pathname === '/' : pathname.startsWith(to));
 
   return (
-    <AppShell header={{ height: 60 }} navbar={{ width: 248, breakpoint: 'sm', collapsed: { mobile: true } }}
+    <AppShell header={{ height: 60 }} navbar={{ width: 248, breakpoint: 'sm', collapsed: { mobile: true, desktop: focus } }}
       padding="md" className={classes.shell} style={{ '--company-color': company.theme_color } as React.CSSProperties}>
       <AppShell.Header className={classes.header}>
         <Group h="100%" px="md" justify="space-between" wrap="nowrap">
@@ -144,13 +146,13 @@ export function AppLayout() {
         </Stack>
       </AppShell.Navbar>
 
-      <AppShell.Main className={classes.main}>
+      <AppShell.Main className={focus ? classes.mainFocus : classes.main}>
         <BackupBanner />
         <Outlet />
       </AppShell.Main>
 
       {/* Mobile bottom navigation */}
-      <nav className={classes.bottomNav} aria-label="Main">
+      {!focus && <nav className={classes.bottomNav} aria-label="Main">
         <BottomLink to="/" label="Dashboard" icon={<IconHome />} active={active('/')} />
         <BottomLink to="/register" label="Register" icon={<IconList />} active={active('/register')} />
         {can('data_entry') ? (
@@ -162,7 +164,7 @@ export function AppLayout() {
         ) : <span className={classes.fabSpacer} />}
         <BottomLink to="/reports" label="Reports" icon={<IconChart />} active={active('/reports')} />
         <BottomLink to="/more" label="More" icon={<IconMenu />} active={!['/', '/register', '/reports', '/entry'].some((p) => p === '/' ? pathname === '/' : pathname.startsWith(p))} />
-      </nav>
+      </nav>}
     </AppShell>
   );
 }

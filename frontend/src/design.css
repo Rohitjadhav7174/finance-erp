@@ -204,6 +204,20 @@ body {
   flex-shrink: 0;
 }
 
+/* Save button pinned to the bottom of the full-screen entry form */
+.save-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 150;
+  padding: 12px max(16px, calc((100% - 720px) / 2)) calc(12px + env(safe-area-inset-bottom, 0px));
+  background: rgb(255 255 255 / 0.96);
+  backdrop-filter: saturate(180%) blur(10px);
+  border-top: 1px solid var(--card-border);
+  box-shadow: 0 -4px 16px rgb(15 61 54 / 0.06);
+}
+
 /* Long amounts never push the layout wider than the screen */
 .amount {
   font-variant-numeric: tabular-nums;

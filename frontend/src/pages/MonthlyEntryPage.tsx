@@ -1,7 +1,8 @@
-import { ActionIcon, Alert, Badge, Box, Button, Group, Paper, Select, SimpleGrid, Stack, Text, TextInput, Title } from '@mantine/core';
+import { ActionIcon, Alert, Anchor, Badge, Box, Button, Group, Paper, Select, SimpleGrid, Stack, Text, TextInput, Title } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { AmountInput, DateField } from '../components/fields';
 import { useCompany } from '../context/CompanyContext';
 import { api, ApiError, json } from '../lib/api';
@@ -113,13 +114,15 @@ export function MonthlyEntryPage() {
   if (!company) return null;
 
   return (
-    <Stack maw={1000}>
+    <Stack>
       <div>
+        <Anchor component={Link} to="/" size="sm" fw={600}>← Back to dashboard</Anchor>
         <Title order={3}>Monthly entry</Title>
         <Text size="sm" c="dimmed"><Text span fw={700} c={company.theme_color}>{company.name}</Text> · same columns as the Excel sheet · shaded boxes are calculated</Text>
       </div>
       {error && <Alert color="red" role="alert">{error}</Alert>}
 
+      <SimpleGrid cols={{ base: 1, lg: 2 }}>
       <Paper withBorder p="md">
         <div className="section-title"><span>1</span>Period</div>
         <SimpleGrid cols={{ base: 1, xs: 2, md: 3 }}>
@@ -154,6 +157,9 @@ export function MonthlyEntryPage() {
         </Stack>
       </Paper>
 
+      </SimpleGrid>
+
+      <SimpleGrid cols={{ base: 1, lg: 2 }}>
       <Paper withBorder p="md">
         <div className="section-title"><span>3</span>Bill &amp; installment</div>
         <SimpleGrid cols={{ base: 1, sm: 3 }}>
@@ -177,14 +183,17 @@ export function MonthlyEntryPage() {
           </Calc>
         </SimpleGrid>
       </Paper>
+      </SimpleGrid>
 
+      <div className="save-bar">
       {can('accountant') ? (
-        <Button size="lg" radius="xl" disabled={!hasAmount || !!bad} loading={save.isPending}
+        <Button size="lg" fullWidth disabled={!hasAmount || !!bad} loading={save.isPending}
           onClick={() => save.mutate('post')}>Save</Button>
       ) : (
-        <Button size="lg" disabled={!hasAmount || !!bad} loading={save.isPending}
+        <Button size="lg" fullWidth disabled={!hasAmount || !!bad} loading={save.isPending}
           onClick={() => save.mutate('submit')}>Send for approval</Button>
       )}
+      </div>
     </Stack>
   );
 }
