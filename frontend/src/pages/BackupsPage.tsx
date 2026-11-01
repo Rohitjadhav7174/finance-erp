@@ -17,10 +17,12 @@ export function BackupBanner() {
   const { data } = useQuery({
     queryKey: ['backup-health'],
     queryFn: () => api<BackupHealth>('/admin/backup-health'),
-    enabled: can('company_admin'),
+    enabled: can('company_admin') && !import.meta.env.DEV,
     staleTime: 10 * 60_000,
     retry: false,
   });
+  // Backups run only for the online app, so the local dev server (npm run dev) never shows this warning.
+  if (import.meta.env.DEV) return null;
   if (!data || (!data.overdue && data.last_status !== 'failed')) return null;
   return (
     <Alert color="red" variant="light" mb="md" py={8} px="sm" radius="md">
