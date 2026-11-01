@@ -59,7 +59,7 @@ function UserMenu() {
     <Menu position="bottom-end" width={240}>
       <Menu.Target>
         <UnstyledButton aria-label="Your account">
-          <Avatar size={34} radius="xl" color={company.theme_color} variant="light">{initials(me.profile.full_name)}</Avatar>
+          <Avatar size={34} radius="xl" color="violet" variant="white">{initials(me.profile.full_name)}</Avatar>
         </UnstyledButton>
       </Menu.Target>
       <Menu.Dropdown>
@@ -116,7 +116,7 @@ export function AppLayout() {
         <Group h="100%" px="md" justify="space-between" wrap="nowrap">
           <CompanySwitcher />
           <Group gap={6} wrap="nowrap">
-            <ActionIcon component={Link} to="/search" variant="subtle" color="gray" size="lg" radius="xl" aria-label="Search">
+            <ActionIcon component={Link} to="/search" variant="subtle" color="white" size="lg" radius="xl" aria-label="Search">
               <IconSearch size={20} />
             </ActionIcon>
             <UserMenu />
@@ -134,7 +134,7 @@ export function AppLayout() {
             </UnstyledButton>
           ))}
           <Box mt="auto" className={classes.navUser}>
-            <Avatar size={32} radius="xl" color={company.theme_color} variant="light">{initials(me.profile.full_name)}</Avatar>
+            <Avatar size={32} radius="xl" color="violet" variant="light">{initials(me.profile.full_name)}</Avatar>
             <Box style={{ minWidth: 0, flex: 1 }}>
               <Text size="sm" fw={600} truncate>{me.profile.full_name}</Text>
               <Text size="xs" c="dimmed" truncate>{ROLE_LABELS[company.role]}</Text>
@@ -156,7 +156,7 @@ export function AppLayout() {
         {can('data_entry') ? (
           <button type="button" className={classes.fab} onClick={() => navigate('/entry')} aria-label="New monthly entry"
             data-active={active('/entry') || undefined}>
-            <span style={{ background: company.theme_color }}><IconPlus size={22} /></span>
+            <span><IconPlus size={22} /></span>
             Entry
           </button>
         ) : <span className={classes.fabSpacer} />}

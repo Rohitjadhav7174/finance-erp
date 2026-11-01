@@ -19,7 +19,7 @@ export function MorePage() {
       <Title order={3}>More</Title>
       <Paper withBorder p="md">
         <Group wrap="nowrap">
-          <Avatar size={48} radius="xl" color={company.theme_color} variant="light">
+          <Avatar size={48} radius="xl" color="violet" variant="light">
             {name.split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase()}
           </Avatar>
           <Box style={{ minWidth: 0 }}>

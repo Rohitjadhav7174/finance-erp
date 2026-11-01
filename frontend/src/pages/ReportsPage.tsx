@@ -264,7 +264,7 @@ function ReportCards({ data }: { data: Report }) {
         return to ? <UnstyledButton key={i} component={Link} to={to} style={{ display: 'block' }}>{card}</UnstyledButton> : <Box key={i}>{card}</Box>;
       })}
       {moneyTotals.length > 0 && (
-        <Paper withBorder p="sm" style={{ borderColor: 'var(--company-color)', borderWidth: 2 }}>
+        <Paper withBorder p="sm" style={{ borderColor: 'var(--accent)', borderWidth: 2 }}>
           <Text fw={800} size="sm" mb={6}>Total</Text>
           <Stack gap={4}>
             {moneyTotals.map((c) => (

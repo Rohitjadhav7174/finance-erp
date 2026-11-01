@@ -276,10 +276,10 @@ function EntryForm({ kind, existing }: { kind: FormKind; existing?: EntryDetail 
           <Button variant="default" size="md" loading={save.isPending && save.variables === 'draft'}
             disabled={save.isPending} onClick={() => submit('draft')}>Save draft</Button>
           {can('accountant') ? (
-            <Button size="md" color={company.theme_color} loading={save.isPending && save.variables === 'post'}
+            <Button size="md" loading={save.isPending && save.variables === 'post'}
               disabled={save.isPending} onClick={() => submit('post')}>Save &amp; post</Button>
           ) : (
-            <Button size="md" color={company.theme_color} loading={save.isPending && save.variables === 'submit'}
+            <Button size="md" loading={save.isPending && save.variables === 'submit'}
               disabled={save.isPending} onClick={() => submit('submit')}>Send for approval</Button>
           )}
         </Group>

@@ -60,7 +60,7 @@ export function HomePage() {
         <Group gap="xs" wrap="wrap" w={{ base: '100%', xs: 'auto' }}>
           <PeriodPicker value={period} onChange={setPeriod} />
           {can('data_entry') && scope === 'company' && (
-            <Button component={Link} to="/entry" size="md" color={company.theme_color} w={{ base: '100%', xs: 'auto' }}>+ Monthly entry</Button>
+            <Button component={Link} to="/entry" size="md" w={{ base: '100%', xs: 'auto' }}>+ Monthly entry</Button>
           )}
         </Group>
       </Group>

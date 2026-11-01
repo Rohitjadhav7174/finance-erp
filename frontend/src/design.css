@@ -1,12 +1,14 @@
 /* App-wide look: light, calm and professional. White surfaces, hairline borders, the company colour used sparingly. */
 :root {
-  --app-bg: #f6f7f9;
-  --card-border: #e8eaee;
-  --card-shadow: 0 1px 2px rgb(16 24 40 / 0.04);
-  --ink: #1d2433;
-  --ink-soft: #4a5263;
-  --accent: var(--company-color, #1971c2);
-  --accent-soft: color-mix(in srgb, var(--accent) 9%, #fff);
+  /* Warm purple theme. The company's own colour is kept for its badge and the stripe under the header. */
+  --app-bg: #f7f5fd;
+  --card-border: #ebe7f6;
+  --card-shadow: 0 1px 2px rgb(76 29 149 / 0.04), 0 2px 6px rgb(76 29 149 / 0.04);
+  --ink: #1f1a33;
+  --ink-soft: #4d4766;
+  --accent: #6741d9;
+  --accent-soft: #f1ecff;
+  --brand-gradient: linear-gradient(120deg, #4c3fd8 0%, #6d3fdc 55%, #8a3ee0 100%);
 }
 
 body {
@@ -71,7 +73,7 @@ body {
 }
 
 .mantine-SegmentedControl-root {
-  background: #eceef2;
+  background: #ece8f8;
 }
 
 /* Section heading inside cards: a numbered chip */
@@ -98,7 +100,7 @@ body {
 .calc-box {
   padding: 10px 12px;
   border-radius: 10px;
-  background: #f8f9fb;
+  background: #faf8ff;
   border: 1px solid var(--card-border);
   min-width: 0;
 }
@@ -107,18 +109,26 @@ body {
 .hero {
   position: relative;
   overflow: hidden;
-  color: var(--ink);
-  border-radius: 16px;
-  padding: 20px;
-  background: linear-gradient(135deg, var(--accent-soft), #fff 70%);
-  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--card-border));
-  border-left: 4px solid var(--accent);
-  box-shadow: var(--card-shadow);
+  color: #fff;
+  border-radius: 18px;
+  padding: 22px;
+  background: var(--brand-gradient);
+  box-shadow: 0 10px 28px rgb(103 65 217 / 0.28);
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  right: -70px;
+  top: -70px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.08);
 }
 .hero-label {
   font-size: 13px;
   font-weight: 600;
-  color: var(--ink-soft);
+  color: rgb(255 255 255 / 0.85);
 }
 .hero-amount {
   font-size: clamp(28px, 8vw, 38px);
@@ -134,10 +144,10 @@ body {
   gap: 6px 20px;
   margin-top: 10px;
   font-size: 14px;
-  color: var(--ink-soft);
+  color: rgb(255 255 255 / 0.85);
 }
 .hero-split b {
-  color: var(--ink);
+  color: #fff;
   font-weight: 650;
 }
 
@@ -180,10 +190,10 @@ body {
   transition: background 0.12s ease;
 }
 .menu-row + .menu-row {
-  border-top: 1px solid #f0f1f4;
+  border-top: 1px solid #f1eef9;
 }
 .menu-row:hover {
-  background: #f8f9fb;
+  background: #faf8ff;
 }
 .menu-row:focus-visible {
   outline: 2px solid var(--accent);

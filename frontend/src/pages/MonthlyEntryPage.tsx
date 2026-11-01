@@ -179,10 +179,10 @@ export function MonthlyEntryPage() {
       </Paper>
 
       {can('accountant') ? (
-        <Button size="lg" radius="xl" color={company.theme_color} disabled={!hasAmount || !!bad} loading={save.isPending}
+        <Button size="lg" radius="xl" disabled={!hasAmount || !!bad} loading={save.isPending}
           onClick={() => save.mutate('post')}>Save</Button>
       ) : (
-        <Button size="lg" color={company.theme_color} disabled={!hasAmount || !!bad} loading={save.isPending}
+        <Button size="lg" disabled={!hasAmount || !!bad} loading={save.isPending}
           onClick={() => save.mutate('submit')}>Send for approval</Button>
       )}
     </Stack>

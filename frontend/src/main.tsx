@@ -39,7 +39,7 @@ import { UsersPage } from './pages/UsersPage';
 const theme = createTheme({
   fontFamily: '"Inter Variable", system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif',
   defaultRadius: 'md',
-  primaryColor: 'blue',
+  primaryColor: 'violet',
   primaryShade: { light: 8, dark: 6 },
   headings: { fontFamily: '"Inter Variable", system-ui, sans-serif', fontWeight: '700' },
   shadows: { xs: '0 1px 2px rgb(16 24 40 / 0.04)', sm: '0 1px 3px rgb(16 24 40 / 0.06)', md: '0 4px 14px rgb(16 24 40 / 0.08)' },
