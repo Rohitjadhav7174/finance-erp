@@ -122,7 +122,7 @@ export function MonthlyEntryPage() {
       </div>
       {error && <Alert color="red" role="alert">{error}</Alert>}
 
-      <SimpleGrid cols={{ base: 1, lg: 2 }}>
+      <div className="entry-grid">
       <Paper withBorder p="md">
         <div className="section-title"><span>1</span>Period</div>
         <SimpleGrid cols={{ base: 1, xs: 2, md: 3 }}>
@@ -156,10 +156,9 @@ export function MonthlyEntryPage() {
           </Button>
         </Stack>
       </Paper>
+      </div>
 
-      </SimpleGrid>
-
-      <SimpleGrid cols={{ base: 1, lg: 2 }}>
+      <div className="entry-grid">
       <Paper withBorder p="md">
         <div className="section-title"><span>3</span>Bill &amp; installment</div>
         <SimpleGrid cols={{ base: 1, sm: 3 }}>
@@ -183,7 +182,7 @@ export function MonthlyEntryPage() {
           </Calc>
         </SimpleGrid>
       </Paper>
-      </SimpleGrid>
+      </div>
 
       <div className="save-bar">
       {can('accountant') ? (

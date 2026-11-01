@@ -204,18 +204,33 @@ body {
   flex-shrink: 0;
 }
 
+/* Monthly entry sections: one per row, two per row only on very wide screens */
+.entry-grid {
+  display: grid;
+  gap: var(--mantine-spacing-md);
+}
+@media (min-width: 1600px) {
+  .entry-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 /* Save button pinned to the bottom of the full-screen entry form */
 .save-bar {
   position: fixed;
-  left: 0;
+  left: var(--app-shell-navbar-offset, 0px); /* starts after the sidebar on laptops */
   right: 0;
   bottom: 0;
   z-index: 150;
-  padding: 12px max(16px, calc((100% - 720px) / 2)) calc(12px + env(safe-area-inset-bottom, 0px));
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
   background: rgb(255 255 255 / 0.96);
   backdrop-filter: saturate(180%) blur(10px);
   border-top: 1px solid var(--card-border);
   box-shadow: 0 -4px 16px rgb(15 61 54 / 0.06);
+}
+.save-bar > * {
+  max-width: 720px;
+  margin-inline: auto;
 }
 
 /* Long amounts never push the layout wider than the screen */

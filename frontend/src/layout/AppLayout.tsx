@@ -107,12 +107,12 @@ export function AppLayout() {
   if (!company) return <CompanyPicker />;
 
   const nav = MAIN_NAV.filter((n) => n.to !== '/entry' || can('data_entry'));
-  // The monthly entry form opens full screen: no sidebar or bottom bar, only the header with the company.
+  // The monthly entry form uses the full width; on phones the bottom bar makes way for its Save bar.
   const focus = pathname === '/entry';
   const active = (to: string) => (to === '/' ? pathname === '/' : pathname.startsWith(to));
 
   return (
-    <AppShell header={{ height: 60 }} navbar={{ width: 248, breakpoint: 'sm', collapsed: { mobile: true, desktop: focus } }}
+    <AppShell header={{ height: 60 }} navbar={{ width: 248, breakpoint: 'sm', collapsed: { mobile: true } }}
       padding="md" className={classes.shell} style={{ '--company-color': company.theme_color } as React.CSSProperties}>
       <AppShell.Header className={classes.header}>
         <Group h="100%" px="md" justify="space-between" wrap="nowrap">
