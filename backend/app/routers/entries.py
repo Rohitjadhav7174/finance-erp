@@ -5,7 +5,8 @@ import uuid
 from datetime import date
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Path, Query, Request
+import psycopg
 from pydantic import ValidationError
 
 from .. import ledger
@@ -228,6 +229,10 @@ def delete_draft(entry_id: uuid.UUID, version: int, db=Depends(get_db)):
         raise HTTPException(422, "Posted entries cannot be deleted. Request a reversal instead.")
     if entry["version"] != version:
         raise ConflictError()
+    _delete_unposted(db, entry_id, version)
+
+
+def _delete_unposted(db, entry_id: uuid.UUID, version: int) -> None:
     db.execute("delete from fin.bill_allocations where entry_id = %s", (entry_id,))
     bill = db.execute("select id from fin.bills where journal_entry_id = %s", (entry_id,)).fetchone()
     if bill:
@@ -259,13 +264,20 @@ def reverse(request: Request, entry_id: uuid.UUID, idempotency_key: IdemKey = No
                      "and status = 'approved'", (entry_id,)).fetchone()
     if req is None:
         raise HTTPException(422, "This reversal has not been approved yet.")
+    return _detail(db, _reverse_entry(db, entry, req["reason"], idempotency_key))
+
+
+def _reverse_entry(db, entry: dict, reason: str, idempotency_key: str | None = None, on_date: date | None = None) -> uuid.UUID:
+    """Creates and posts the exact mirror of a posted entry (its reversal request must already be approved).
+    on_date: date of the reversal; default today."""
+    entry_id = entry["id"]
     lines = db.execute("select account_id, party_id, debit, credit from fin.journal_lines where entry_id = %s "
                        "order by line_no", (entry_id,)).fetchall()
     rev_id = db.execute(
         """insert into fin.journal_entries (company_id, entry_type, entry_date, description, party_id,
                payment_method, reference_no, reverses_entry_id, site_id, idempotency_key)
-           values (%s, 'reversal', current_date, %s, %s, %s, %s, %s, %s, %s) returning id""",
-        (entry["company_id"], f"Reversal of {entry['entry_no']}: {req['reason']}"[:500], entry["party_id"],
+           values (%s, 'reversal', coalesce(%s::date, current_date), %s, %s, %s, %s, %s, %s, %s) returning id""",
+        (entry["company_id"], on_date, f"Reversal of {entry['entry_no']}: {reason}"[:500], entry["party_id"],
          entry["payment_method"], entry["reference_no"], entry_id, entry["site_id"], idempotency_key),
     ).fetchone()["id"]
     for i, ln in enumerate(lines, start=1):
@@ -275,7 +287,7 @@ def reverse(request: Request, entry_id: uuid.UUID, idempotency_key: IdemKey = No
             (rev_id, entry["company_id"], i, ln["account_id"], ln["party_id"], ln["credit"], ln["debit"]),
         )
     db.execute("update fin.journal_entries set status = 'posted' where id = %s", (rev_id,))
-    return _detail(db, rev_id)
+    return rev_id
 
 
 # ---------------------------------------------------------------------------
@@ -289,6 +301,14 @@ def monthly_entry(company_id: uuid.UUID, body: MonthlySheetIn, idempotency_key: 
     from decimal import Decimal
 
     from .. import schemas as s
+
+    # Every part is stored with "<key>-bill/-rcpt/-expN", which is how the saved row is found again
+    # for the Saved entries list, editing and cancelling.
+    idempotency_key = idempotency_key or uuid.uuid4().hex
+    already_saved = db.execute("select 1 from fin.journal_entries where company_id = %s and idempotency_key like %s",
+                               (company_id, f"{idempotency_key}-%")).fetchone()
+    if body.replaces and not already_saved:  # on a retried save the old row was already replaced
+        _cancel_monthly(db, company_id, body.replaces, "Edited: replaced by a corrected entry", require_now=True)
 
     # Fields the Excel sheet does not have get sheet defaults: Cash in Hand, one standard customer,
     # and a generated bill number (MB-YYYY-MM, then -2, -3 … if that month already has one).
@@ -361,3 +381,129 @@ def monthly_entry(company_id: uuid.UUID, body: MonthlySheetIn, idempotency_key: 
     return {"entries": [_load(db, e) for e in created],
             "summary": {"monthly_bill": str(body.monthly_bill or 0), "installment_received": str(body.installment_received or 0),
                         "expenses": str(total_exp)}}
+
+
+# ---------------------------------------------------------------------------
+# Saved monthly entries: list, cancel (delete) and the replace step of editing
+# ---------------------------------------------------------------------------
+_PART_RE = r"-(bill|rcpt|exp[0-9]+)$"
+RowKey = Annotated[str, Path(pattern=r"^[A-Za-z0-9_]{8,80}$")]
+
+
+def _monthly_parts(db, company_id: uuid.UUID, key: str | None = None, d_from: date | None = None,
+                   d_to: date | None = None) -> list[dict]:
+    """The entries each saved monthly row was made of (never reversals), payments first, bill last."""
+    where = ["e.company_id = %(cid)s", "e.entry_type in ('bill_sale', 'receipt', 'expense')",
+             "e.idempotency_key ~ %(re)s"]
+    params = {"cid": company_id, "re": ("^" + re.escape(key) if key else "") + _PART_RE, "from": d_from, "to": d_to}
+    if d_from:
+        where.append("e.entry_date >= %(from)s")
+    if d_to:
+        where.append("e.entry_date <= %(to)s")
+    return db.execute(f"""
+        select e.id, e.entry_no, e.entry_type::text, e.status::text, e.entry_date, e.description, e.version, e.created_at,
+               substring(e.idempotency_key from '^(.*){_PART_RE}') as row_key,
+               b.period_from, b.period_to, b.bill_no,
+               (select coalesce(sum(debit), 0)::numeric(14,2)::text from fin.journal_lines where entry_id = e.id) as amount,
+               x.account_id as expense_account_id, x.code as expense_code,
+               exists (select 1 from fin.approval_requests r where r.target_id = e.id and r.action = 'reverse_entry'
+                       and r.status in ('pending', 'approved')) as cancel_requested
+        from fin.journal_entries e
+        left join fin.bills b on b.journal_entry_id = e.id
+        left join lateral (select l.account_id, a.code from fin.journal_lines l join fin.accounts a on a.id = l.account_id
+                           where l.entry_id = e.id and a.type = 'expense' limit 1) x on e.entry_type = 'expense'
+        where {' and '.join(where)}
+        order by case e.entry_type when 'expense' then 0 when 'receipt' then 1 else 2 end, e.created_at""",
+                      params).fetchall()
+
+
+def _row_status(parts: list[dict]) -> str:
+    st = {p["status"] for p in parts}
+    if st == {"reversed"}:
+        return "cancelled"
+    if any(p["cancel_requested"] and p["status"] == "posted" for p in parts):
+        return "cancel_requested"
+    for s_ in ("draft", "pending_approval"):
+        if s_ in st:
+            return s_
+    return "posted"
+
+
+@router.get("/companies/{company_id}/monthly-entries")
+def list_monthly(company_id: uuid.UUID, db=Depends(get_db), date_from: date | None = None, date_to: date | None = None):
+    """Each saved monthly form as one row, like a row of the Excel sheet."""
+    rows: dict[str, dict] = {}
+    for p in _monthly_parts(db, company_id, d_from=date_from, d_to=date_to):
+        r = rows.setdefault(p["row_key"], {
+            "key": p["row_key"], "entry_date": p["entry_date"], "created_at": p["created_at"], "period_from": None,
+            "period_to": None, "bill_no": None, "monthly_bill": None, "installment_received": None,
+            "payments": [], "other_expense": None, "entry_nos": [], "parts": []})
+        r["parts"].append(p)
+        if p["entry_no"]:
+            r["entry_nos"].append(p["entry_no"])
+        if p["entry_type"] == "bill_sale":
+            r.update(period_from=p["period_from"], period_to=p["period_to"], bill_no=p["bill_no"], monthly_bill=p["amount"])
+        elif p["entry_type"] == "receipt":
+            r["installment_received"] = p["amount"]
+        elif p["expense_code"] == "EXP-OTH":
+            r["other_expense"] = p["amount"]
+        else:
+            r["payments"].append({"account_id": p["expense_account_id"], "label": p["description"], "amount": p["amount"]})
+    out = []
+    for r in rows.values():
+        r["status"] = _row_status(r.pop("parts"))
+        out.append(r)
+    out.sort(key=lambda r: (r["entry_date"], r["created_at"]), reverse=True)
+    return out
+
+
+@router.post("/companies/{company_id}/monthly-entries/{key}/cancel")
+@limiter.limit(sensitive_limit)
+def cancel_monthly(request: Request, company_id: uuid.UUID, key: RowKey, body: ReasonIn, db=Depends(get_db)):
+    """'Delete' a saved monthly row. Nothing is erased: unposted parts are removed, posted parts are
+    reversed (dated like the original, so the monthly sheet stays right) and the row shows as cancelled."""
+    return _cancel_monthly(db, company_id, key, body.reason)
+
+
+def _cancel_monthly(db, company_id: uuid.UUID, key: str, reason: str, require_now: bool = False) -> dict:
+    parts = _monthly_parts(db, company_id, key)
+    if not parts:
+        raise HTTPException(404, "Saved entry not found.")
+    if _row_status(parts) == "cancelled":
+        return {"cancelled": 0, "waiting_approval": 0, "status": "cancelled"}
+    # A super admin may approve their own request with a written reason (the database records it);
+    # anyone else needs a second admin, so their cancellation waits in Approvals.
+    can_now = db.execute("select fin.is_super_admin() as ok").fetchone()["ok"]
+    posted = [p for p in parts if p["status"] == "posted"]
+    if posted and not can_now and require_now:
+        raise HTTPException(403, "This entry is already saved in the books. Only the owner (super admin) can edit it "
+                                 "directly; you can delete it instead, which asks an admin for approval.")
+    done = waiting = 0
+    for p in parts:
+        if p["status"] in ("draft", "pending_approval"):
+            _delete_unposted(db, p["id"], p["version"])
+            done += 1
+        elif p["status"] == "posted":
+            req = db.execute("select id, status::text from fin.approval_requests where target_id = %s "
+                             "and action = 'reverse_entry' and status in ('pending', 'approved')", (p["id"],)).fetchone()
+            if req is None:
+                req = db.execute("insert into fin.approval_requests (company_id, action, target_id, reason) "
+                                 "values (%s, 'reverse_entry', %s, %s) returning id, status::text",
+                                 (company_id, p["id"], reason)).fetchone()
+            if req["status"] == "pending" and can_now:
+                db.execute("update fin.approval_requests set status = 'approved', decision_note = %s where id = %s",
+                           (reason, req["id"]))
+                req = {**req, "status": "approved"}
+            if req["status"] == "approved":
+                try:
+                    _reverse_entry(db, _load(db, p["id"]), reason, on_date=p["entry_date"])
+                except psycopg.errors.RaiseException as e:
+                    if "reverse the payments allocated" in str(e):
+                        raise HTTPException(409, "A later month's installment was applied to this month's bill. "
+                                                 "Delete that later month first, then this one.") from None
+                    raise
+                done += 1
+            else:
+                waiting += 1
+    return {"cancelled": done, "waiting_approval": waiting,
+            "status": "cancel_requested" if waiting else "cancelled"}

@@ -199,6 +199,8 @@ class MonthlySheetIn(_EntryCommon):
     expenses: list[SheetExpense] = Field(default_factory=list, max_length=20)
     paid_from_id: uuid.UUID | None = None
     expense_method: Method = "cash"
+    # Editing: the key of the saved row this corrected row replaces (that row is cancelled in the same step).
+    replaces: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_]{8,80}$")] | None = None
 
     @model_validator(mode="after")
     def _rules(self):

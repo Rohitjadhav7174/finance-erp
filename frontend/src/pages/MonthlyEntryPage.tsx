@@ -1,9 +1,10 @@
-import { ActionIcon, Alert, Anchor, Badge, Box, Button, Group, Input, Paper, Select, SimpleGrid, Stack, Text, TextInput, Title } from '@mantine/core';
+import { ActionIcon, Alert, Anchor, Badge, Box, Button, Group, Input, Paper, SegmentedControl, Select, SimpleGrid, Stack, Text, TextInput, Title } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AmountInput, DateField } from '../components/fields';
+import { rowPeriod, SavedMonthlyEntries, type SavedRow } from '../components/SavedMonthlyEntries';
 import { useCompany } from '../context/CompanyContext';
 import { api, ApiError, json } from '../lib/api';
 import { formatINR } from '../lib/format';
@@ -65,6 +66,24 @@ export function MonthlyEntryPage() {
   const [received, setReceived] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [key, setKey] = useState(() => crypto.randomUUID().replace(/-/g, ''));
+  const [tab, setTab] = useState<'new' | 'saved'>('new');
+  const [editing, setEditing] = useState<SavedRow | null>(null);
+
+  const resetForm = () => {
+    setPayments([{ account_id: null, amount: '' }]); setBill(''); setOther(''); setReceived(''); setError(null);
+    setEditing(null); setKey(crypto.randomUUID().replace(/-/g, ''));
+  };
+  // Edit = open the saved row in the form; saving replaces it (the old row is deleted in the same step).
+  const startEdit = (row: SavedRow) => {
+    const plain = (v: string | null) => (v ? v.replace(/\.00$/, '') : '');
+    const p = rowPeriod(row);
+    setDate(row.entry_date); setPeriodFrom(p.from); setPeriodTo(row.period_to ?? monthEnd(p.from));
+    setPayments(row.payments.length ? row.payments.map((x) => ({ account_id: x.account_id, amount: plain(x.amount) }))
+      : [{ account_id: null, amount: '' }]);
+    setBill(plain(row.monthly_bill)); setOther(plain(row.other_expense)); setReceived(plain(row.installment_received));
+    setError(null); setEditing(row); setKey(crypto.randomUUID().replace(/-/g, '')); setTab('new');
+    window.scrollTo({ top: 0 });
+  };
 
   const opening = useQuery({
     queryKey: ['opening', company?.id, date],
@@ -72,7 +91,11 @@ export function MonthlyEntryPage() {
     enabled: !!company && /^\d{4}-\d{2}-\d{2}$/.test(date),
   });
   const openingCash = opening.data?.figures.opening_cash ?? '0';
-  const owedBefore = parties.data?.find((p) => p.name.toLowerCase() === DEFAULT_CUSTOMER)?.receivable_balance ?? '0';
+  const owedNow = parties.data?.find((p) => p.name.toLowerCase() === DEFAULT_CUSTOMER)?.receivable_balance ?? '0';
+  // While editing, the saved row being replaced must not be counted twice.
+  const owedBefore = editing && editing.status === 'posted'
+    ? fromPaise(toPaise(owedNow) - toPaise(editing.monthly_bill ?? '0') + toPaise(editing.installment_received ?? '0'))
+    : owedNow;
 
   const filledPayments = payments.filter((p) => p.account_id && isAmount(p.amount));
   const expenses = sumAmounts([...filledPayments.map((p) => p.amount), ...(isAmount(other) ? [other] : [])]);
@@ -87,7 +110,7 @@ export function MonthlyEntryPage() {
     mutationFn: (action: 'post' | 'submit') => api<{ entries: unknown[] }>(`/companies/${company!.id}/monthly-entry`, {
       method: 'POST', idempotencyKey: key,
       body: json({
-        entry_date: date, period_from: periodFrom || null, period_to: periodTo || null, action,
+        entry_date: date, period_from: periodFrom || null, period_to: periodTo || null, action, replaces: editing?.key ?? null,
         monthly_bill: isAmount(bill) ? bill : null,
         installment_received: isAmount(received) ? received : null,
         expenses: [
@@ -101,10 +124,11 @@ export function MonthlyEntryPage() {
     }),
     onSuccess: (r, action) => {
       qc.invalidateQueries();
-      notifications.show({ color: 'green', title: action === 'post' ? 'Saved' : 'Sent for approval',
+      notifications.show({ color: 'green', title: editing ? 'Changes saved' : action === 'post' ? 'Saved' : 'Sent for approval',
         message: `${r.entries.length} entr${r.entries.length === 1 ? 'y' : 'ies'} recorded` });
-      setPayments([{ account_id: null, amount: '' }]); setBill(''); setOther(''); setReceived(''); setError(null);
-      setKey(crypto.randomUUID().replace(/-/g, ''));
+      const wasEditing = !!editing;
+      resetForm();
+      if (wasEditing) setTab('saved');
     },
     onError: (e: Error) => setError(e instanceof ApiError ? e.message : 'Not saved. Try again.'),
   });
@@ -121,6 +145,17 @@ export function MonthlyEntryPage() {
         <Title order={3}>Monthly entry</Title>
         <Text size="sm" c="dimmed"><Text span fw={700} c={company.theme_color}>{company.name}</Text> · same columns as the Excel sheet · shaded boxes are calculated</Text>
       </div>
+      <SegmentedControl value={tab} onChange={(v) => setTab(v as 'new' | 'saved')} maw={420}
+        data={[{ value: 'new', label: editing ? 'Edit entry' : 'New entry' }, { value: 'saved', label: 'Saved entries' }]} />
+      {tab === 'saved' ? <SavedMonthlyEntries onEdit={startEdit} /> : (<>
+      {editing && (
+        <Alert color="blue" title={`Editing ${periodLabel(rowPeriod(editing).from, rowPeriod(editing).to)}`}>
+          <Group justify="space-between" gap="xs">
+            <Text size="sm">Change what you need and save. The old entry is replaced and kept in the history.</Text>
+            <Button size="xs" variant="default" onClick={resetForm}>Stop editing</Button>
+          </Group>
+        </Alert>
+      )}
       {error && <Alert color="red" role="alert">{error}</Alert>}
 
       <div className="entry-grid">
@@ -197,12 +232,13 @@ export function MonthlyEntryPage() {
       <div className="save-bar">
       {can('accountant') ? (
         <Button size="lg" fullWidth disabled={!hasAmount || !!bad} loading={save.isPending}
-          onClick={() => save.mutate('post')}>Save</Button>
+          onClick={() => save.mutate('post')}>{editing ? 'Save changes' : 'Save'}</Button>
       ) : (
         <Button size="lg" fullWidth disabled={!hasAmount || !!bad} loading={save.isPending}
           onClick={() => save.mutate('submit')}>Send for approval</Button>
       )}
       </div>
+      </>)}
     </Stack>
   );
 }

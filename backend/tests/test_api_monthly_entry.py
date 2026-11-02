@@ -77,3 +77,95 @@ def test_excel_fields_only_get_sheet_defaults(client, auth, seed):
     e = client.get(f"/api/entries/{first.json()['entries'][1]['id']}", headers=h).json()
     assert e["party_name"] == "Monthly bill customer"
     assert any(l["code"] == "CASH" and l["debit"] == "40000.00" for l in e["lines"])
+
+
+def _row(client, h, art, key):
+    rows = client.get(f"/api/companies/{art}/monthly-entries", headers=h).json()
+    return next(r for r in rows if r["key"] == key)
+
+
+def _save(client, h, art, acc, cust, key, **extra):
+    body = {"entry_date": "2025-09-10", "party_id": cust, "monthly_bill": "1000", "period_from": "2025-09-01",
+            "period_to": "2025-10-31", "installment_received": "400", "received_into_id": acc["CASH"],
+            "expenses": [{"account_id": acc["EXP-DSL"], "amount": "300", "label": "Diesel Payment"},
+                         {"account_id": acc["EXP-OTH"], "amount": "50", "label": "Other Expense / Charge"}],
+            "paid_from_id": acc["CASH"], "action": "post", **extra}
+    r = client.post(f"/api/companies/{art}/monthly-entry", json=body, headers={**h, "Idempotency-Key": key})
+    assert r.status_code == 201, r.text
+    return r
+
+
+def test_saved_rows_list_like_the_sheet(client, auth, seed):
+    art, h, acc, cust = _setup(client, auth, seed)
+    key = uuid.uuid4().hex
+    _save(client, h, art, acc, cust, key)
+    row = _row(client, h, art, key)
+    assert (row["monthly_bill"], row["installment_received"], row["other_expense"], row["status"]) == \
+        ("1000.00", "400.00", "50.00", "posted")
+    assert row["period_from"] == "2025-09-01" and row["period_to"] == "2025-10-31"
+    assert [(p["account_id"], p["amount"]) for p in row["payments"]] == [(acc["EXP-DSL"], "300.00")]
+
+
+def test_owner_deletes_a_row_at_once_and_totals_return(client, auth, seed):
+    art, h, acc, cust = _setup(client, auth, seed)
+    key = uuid.uuid4().hex
+    entries = _save(client, h, art, acc, cust, key).json()["entries"]
+    owner = auth("super")
+    r = client.post(f"/api/companies/{art}/monthly-entries/{key}/cancel", headers=owner, json={"reason": "Entered twice"})
+    assert r.status_code == 200, r.text
+    assert r.json() == {"cancelled": 4, "waiting_approval": 0, "status": "cancelled"}
+    assert _row(client, h, art, key)["status"] == "cancelled"
+    for e in entries:  # originals kept and marked reversed; each reversal is dated like the original
+        d = client.get(f"/api/entries/{e['id']}", headers=h).json()
+        assert d["status"] == "reversed"
+        assert client.get(f"/api/entries/{d['reversed_by_id']}", headers=h).json()["entry_date"] == "2025-09-10"
+    # cancelling again is harmless
+    assert client.post(f"/api/companies/{art}/monthly-entries/{key}/cancel", headers=owner,
+                       json={"reason": "Entered twice"}).json()["status"] == "cancelled"
+
+
+def test_accountant_delete_waits_for_an_admin(client, auth, seed):
+    art, h, acc, cust = _setup(client, auth, seed)
+    key = uuid.uuid4().hex
+    _save(client, h, art, acc, cust, key)
+    r = client.post(f"/api/companies/{art}/monthly-entries/{key}/cancel", headers=h, json={"reason": "Wrong amount"})
+    assert r.status_code == 200 and r.json()["waiting_approval"] == 4 and r.json()["status"] == "cancel_requested"
+    assert _row(client, h, art, key)["status"] == "cancel_requested"
+
+
+def test_owner_edit_replaces_the_row(client, auth, seed):
+    art, h, acc, cust = _setup(client, auth, seed)
+    old, new = uuid.uuid4().hex, uuid.uuid4().hex
+    _save(client, h, art, acc, cust, old)
+    owner = auth("super")
+    _save(client, owner, art, acc, cust, new, monthly_bill="1200", replaces=old)
+    assert _row(client, h, art, old)["status"] == "cancelled"
+    assert _row(client, h, art, new)["monthly_bill"] == "1200.00"
+    # a retried save (same key) does not create a second corrected row
+    r = _save(client, owner, art, acc, cust, new, monthly_bill="1200", replaces=old)
+    assert sum(1 for x in client.get(f"/api/companies/{art}/monthly-entries", headers=h).json() if x["key"] == new) == 1
+
+
+def test_accountant_cannot_edit_a_posted_row(client, auth, seed):
+    art, h, acc, cust = _setup(client, auth, seed)
+    old = uuid.uuid4().hex
+    _save(client, h, art, acc, cust, old)
+    body = {"entry_date": "2025-09-10", "monthly_bill": "5", "action": "post", "replaces": old}
+    r = client.post(f"/api/companies/{art}/monthly-entry", json=body, headers={**h, "Idempotency-Key": uuid.uuid4().hex})
+    assert r.status_code == 403
+    assert _row(client, h, art, old)["status"] == "posted"  # nothing changed
+
+
+def test_month_paid_by_a_later_installment_needs_that_month_deleted_first(client, auth, seed):
+    art, h, acc, cust = _setup(client, auth, seed)
+    may, june = uuid.uuid4().hex, uuid.uuid4().hex
+    _save(client, h, art, acc, cust, may, installment_received=None, expenses=[])
+    _save(client, h, art, acc, cust, june, monthly_bill=None, expenses=[], installment_received="500")  # pays May's bill
+    owner = auth("super")
+    r = client.post(f"/api/companies/{art}/monthly-entries/{may}/cancel", headers=owner, json={"reason": "Wrong month"})
+    assert r.status_code == 409 and "later month" in r.json()["detail"]
+    assert _row(client, h, art, may)["status"] == "posted"  # nothing half-done
+    assert client.post(f"/api/companies/{art}/monthly-entries/{june}/cancel", headers=owner,
+                       json={"reason": "Wrong month"}).status_code == 200
+    assert client.post(f"/api/companies/{art}/monthly-entries/{may}/cancel", headers=owner,
+                       json={"reason": "Wrong month"}).status_code == 200
