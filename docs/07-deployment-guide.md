@@ -1,6 +1,6 @@
 # Deployment guide (step by step)
 
-Target: **Supabase** (database + sign-in) · **Render** (backend API, Singapore) · **Cloudflare Pages**
+Target: **Supabase** (database + sign-in) · **Render** (backend API, Frankfurt — next to the Supabase database in Ireland) · **Cloudflare Pages**
 (frontend) · **GitHub** (code, tests, nightly backups) · **Cloudflare R2** (off-site backups).
 Do the steps in order. Allow about 2 hours the first time. Commands are run on your Mac in the
 project folder unless stated otherwise.

@@ -103,8 +103,14 @@ def fy_start(d: date, start_month: int = 4) -> date:
 # Core figures
 # ---------------------------------------------------------------------------
 def summary(db, cid, d_from: date, d_to: date) -> dict:
+    return summary_start(db, cid, d_from, d_to)()
+
+
+def summary_start(db, cid, d_from: date, d_to: date):
+    """Sends the summary queries and returns a function that reads and shapes the answers. Split so that
+    callers can send several queries in one pipeline (one database round trip) before reading any of them."""
     p = {"cid": cid, "from": d_from, "to": d_to}
-    r = db.execute(f"""
+    r_cur = db.execute(f"""
       with x as ({LINES})
       select
         coalesce(sum(debit - credit) filter (where subtype in ('cash','bank') and entry_date < %(from)s), 0) as opening_cash,
@@ -125,13 +131,13 @@ def summary(db, cid, d_from: date, d_to: date) -> dict:
         coalesce(sum(debit - credit) filter (where subtype = 'receivable' and entry_date <= %(to)s), 0) as receivables,
         coalesce(sum(credit - debit) filter (where subtype = 'payable' and entry_date <= %(to)s), 0) as payables,
         coalesce(sum(credit - debit) filter (where subtype = 'customer_advance' and entry_date <= %(to)s), 0) as advances
-      from x""", p).fetchone()
-    bills = db.execute("""
+      from x""", p)
+    bills_cur = db.execute("""
       select coalesce(sum(amount) filter (where direction = 'receivable'), 0) as raised,
              coalesce(sum(amount) filter (where direction = 'payable'), 0) as received_from_suppliers
       from fin.bills where company_id = %(cid)s and status = 'posted' and bill_date between %(from)s and %(to)s""",
-                       p).fetchone()
-    inst = db.execute(f"""
+                       p)
+    inst_cur = db.execute(f"""
       with i as ({INSTALLMENTS})
       select coalesce(sum(expected_amount - covered) filter (where due_date < current_date and direction = 'receivable'), 0) as overdue,
              count(*) filter (where expected_amount > covered and due_date < current_date and direction = 'receivable') as overdue_count,
@@ -140,7 +146,11 @@ def summary(db, cid, d_from: date, d_to: date) -> dict:
              coalesce(sum(expected_amount - covered) filter (where direction = 'receivable'), 0) as remaining,
              coalesce(sum(expected_amount - covered) filter (where direction = 'receivable'
                       and due_date between current_date and current_date + 30), 0) as upcoming_30
-      from i""", {**p, "asof": date.today()}).fetchone()
+      from i""", {**p, "asof": date.today()})
+    return lambda: _summary_shape(r_cur.fetchone(), bills_cur.fetchone(), inst_cur.fetchone())
+
+
+def _summary_shape(r: dict, bills: dict, inst: dict) -> dict:
     out = {k: m(v) for k, v in r.items()}
     out.update(bills_raised=m(bills["raised"]), supplier_bills=m(bills["received_from_suppliers"]),
                surplus=m(Decimal(r["income"]) - Decimal(r["expenses"])),
@@ -151,10 +161,14 @@ def summary(db, cid, d_from: date, d_to: date) -> dict:
 
 
 def monthly_series(db, cid, d_to: date, months: int = 12) -> list[dict]:
+    return monthly_series_start(db, cid, d_to, months)()
+
+
+def monthly_series_start(db, cid, d_to: date, months: int = 12):
     start = month_start(d_to)
     for _ in range(months - 1):
         start = (start - timedelta(days=1)).replace(day=1)
-    rows = db.execute(f"""
+    cur = db.execute(f"""
       with x as ({LINES}), months as (
         select generate_series(%(start)s::date, %(end)s::date, interval '1 month')::date as m)
       select months.m as month,
@@ -164,13 +178,17 @@ def monthly_series(db, cid, d_to: date, months: int = 12) -> list[dict]:
         coalesce(sum(x.debit - x.credit) filter (where x.acc_type = 'expense'), 0) as expenses
       from months left join x on date_trunc('month', x.entry_date) = months.m and x.entry_date <= %(to)s
       group by months.m order by months.m""",
-                      {"cid": cid, "start": start, "end": month_start(d_to), "to": d_to}).fetchall()
-    return [{"month": str(r["month"]), **{k: m(r[k]) for k in ("money_in", "money_out", "income", "expenses")}}
-            for r in rows]
+                      {"cid": cid, "start": start, "end": month_start(d_to), "to": d_to})
+    return lambda: [{"month": str(r["month"]), **{k: m(r[k]) for k in ("money_in", "money_out", "income", "expenses")}}
+                    for r in cur.fetchall()]
 
 
 def pending_counts(db, cid) -> dict:
-    return db.execute("""
+    return pending_counts_start(db, cid)()
+
+
+def pending_counts_start(db, cid):
+    cur = db.execute("""
       select
         (select count(*) from fin.journal_entries where company_id = %(cid)s and status = 'draft') as drafts,
         (select count(*) from fin.journal_entries where company_id = %(cid)s and status = 'pending_approval') as awaiting_posting,
@@ -178,7 +196,8 @@ def pending_counts(db, cid) -> dict:
         (select count(*) from fin.journal_entries where company_id = %(cid)s and status = 'posted'
             and entry_type in ('receipt','payment') and reference_no is null) as missing_reference,
         (select count(*) from fin.follow_ups where company_id = %(cid)s and status = 'open') as follow_ups""",
-                      {"cid": cid}).fetchone()
+                      {"cid": cid})
+    return cur.fetchone
 
 
 # ---------------------------------------------------------------------------

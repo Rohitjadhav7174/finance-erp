@@ -24,32 +24,44 @@ def _period(d_from: date | None, d_to: date | None, fy_month: int) -> tuple[date
 
 @router.get("/companies/{company_id}/dashboard")
 def dashboard(company_id: uuid.UUID, db=Depends(get_db), date_from: date | None = None, date_to: date | None = None):
-    company = R.company_or_404(db, company_id)
-    d_from, d_to = _period(date_from, date_to, company["fy_start_month"])
-    recent = db.execute("""
+    # The company's financial-year month is needed only when the dates are not given (the app always sends them).
+    company = None if (date_from and date_to) else R.company_or_404(db, company_id)
+    d_from, d_to = _period(date_from, date_to, company["fy_start_month"] if company else 4)
+    # Every query below is independent: send them all in one pipeline, i.e. one database round trip.
+    with db.pipeline():
+        company_cur = None if company else db.execute(
+            "select id, code, name, theme_color, fy_start_month from fin.companies where id = %s", (company_id,))
+        recent = db.execute("""
         select e.id, e.entry_no, e.entry_date, e.entry_type::text, e.status::text, e.description, p.name as party_name,
                (select coalesce(sum(debit), 0)::numeric(14,2)::text from fin.journal_lines where entry_id = e.id) as amount
         from fin.journal_entries e left join fin.parties p on p.id = e.party_id
-        where e.company_id = %s order by e.created_at desc limit 8""", (company_id,)).fetchall()
-    audit = db.execute("""  -- company admins only (RLS)
+        where e.company_id = %s order by e.created_at desc limit 8""", (company_id,))
+        audit = db.execute("""  -- company admins only (RLS)
         select l.at, pr.full_name as actor, l.table_name, l.action,
                coalesce(l.new_data ->> 'entry_no', l.new_data ->> 'bill_no', l.new_data ->> 'name') as ref,
                l.old_data ->> 'status' as old_status, l.new_data ->> 'status' as new_status
         from fin.audit_log l left join fin.profiles pr on pr.user_id = l.actor_id
         where l.company_id = %s and l.table_name in ('journal_entries','bills','approval_requests','company_memberships')
-        order by l.id desc limit 8""", (company_id,)).fetchall()
-    accounts = db.execute("""
+        order by l.id desc limit 8""", (company_id,))
+        accounts = db.execute("""
         select a.id, a.name, a.subtype::text, a.account_no_last4,
                coalesce((select sum(l.debit - l.credit) from fin.journal_lines l join fin.journal_entries e on e.id = l.entry_id
                          where l.account_id = a.id and e.status in ('posted','reversed') and e.entry_date <= %s), 0)::numeric(14,2)::text as balance
         from fin.accounts a where a.company_id = %s and a.subtype in ('cash','bank') and a.is_active order by a.subtype, a.name""",
-                          (d_to, company_id)).fetchall()
+                              (d_to, company_id))
+        figures = R.summary_start(db, company_id, d_from, d_to)
+        monthly = R.monthly_series_start(db, company_id, d_to)
+        pending_counts = R.pending_counts_start(db, company_id)
+    if company_cur is not None:
+        company = company_cur.fetchone()
+        if company is None:
+            raise HTTPException(404, "Company not found.")
     return {"company": company, "from": str(d_from), "to": str(d_to),
-            "figures": R.summary(db, company_id, d_from, d_to),
-            "money_accounts": accounts,
-            "monthly": R.monthly_series(db, company_id, d_to),
-            "pending": R.pending_counts(db, company_id),
-            "recent_entries": recent, "recent_audit": audit}
+            "figures": figures(),
+            "money_accounts": accounts.fetchall(),
+            "monthly": monthly(),
+            "pending": pending_counts(),
+            "recent_entries": recent.fetchall(), "recent_audit": audit.fetchall()}
 
 
 @router.get("/companies/{company_id}/pending")

@@ -4,7 +4,7 @@ services:
   - type: web
     name: finance-erp-api
     runtime: python
-    region: singapore          # closest Render region to India
+    region: frankfurt          # next to the Supabase database (eu-west-1, Ireland): ~20 ms per query
     plan: free                 # free sleeps after 15 min idle (first request ~1 min); use "starter" for real use
     rootDir: backend
     buildCommand: pip install -r requirements.txt
