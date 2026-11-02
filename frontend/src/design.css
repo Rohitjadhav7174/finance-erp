@@ -239,6 +239,204 @@ body {
   overflow-wrap: anywhere;
 }
 
+/* ---------- Sign-in pages and company choice ---------- */
+.auth-shell {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr; /* phone: band only as tall as its content */
+  background: var(--app-bg);
+}
+.auth-brand {
+  position: relative;
+  overflow: hidden;
+  color: #e3ecea;
+  background: radial-gradient(120% 90% at 0% 0%, #134e4a 0%, #0f1f24 55%);
+  padding: 22px 20px 64px;
+}
+.auth-brand::after {
+  content: '';
+  position: absolute;
+  right: -90px;
+  bottom: -120px;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  border: 40px solid rgb(45 212 191 / 0.08);
+}
+.auth-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 17px;
+  color: #fff;
+}
+.auth-logo > span {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #14b8a6;
+  color: #062925;
+  font-size: 20px;
+  font-weight: 800;
+}
+.auth-brand-body {
+  display: none;
+}
+.auth-brand .auth-tag {
+  margin-top: 14px;
+  font-size: 14px;
+}
+.auth-brand h1 {
+  margin: 0 0 10px;
+  font-size: 34px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+.auth-brand p {
+  margin: 0;
+  color: #b7c8c5;
+}
+.auth-brand ul {
+  list-style: none;
+  padding: 0;
+  margin: 28px 0 0;
+  display: grid;
+  gap: 12px;
+}
+.auth-brand li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #d5e2e0;
+}
+.auth-brand li svg {
+  flex-shrink: 0;
+  color: #5eead4;
+}
+.auth-foot {
+  display: none;
+  font-size: 13px;
+}
+.auth-main {
+  display: flex;
+  justify-content: center;
+  padding: 0 16px 32px;
+  margin-top: -40px; /* phone: the card overlaps the dark band */
+  position: relative;
+}
+.auth-card {
+  box-shadow: 0 12px 32px rgb(15 31 36 / 0.12) !important;
+  border-radius: 18px !important;
+  align-self: flex-start;
+}
+@media (min-width: 900px) {
+  .auth-shell {
+    grid-template-columns: minmax(380px, 46%) 1fr;
+    grid-template-rows: 1fr;
+  }
+  .auth-brand {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 40px 48px;
+  }
+  .auth-brand-body,
+  .auth-foot {
+    display: block;
+  }
+  .auth-brand .auth-tag {
+    display: none;
+  }
+  .auth-main {
+    align-items: center;
+    margin-top: 0;
+    padding: 32px;
+  }
+  .auth-card {
+    align-self: center;
+  }
+}
+
+.picker-shell {
+  min-height: 100dvh;
+  background: var(--app-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.picker-band {
+  width: 100%;
+  color: #e3ecea;
+  background: radial-gradient(120% 90% at 0% 0%, #134e4a 0%, #0f1f24 55%);
+  padding: 22px 20px 72px;
+}
+.picker-band > * {
+  max-width: 480px;
+  margin-inline: auto;
+}
+.picker-band h1 {
+  margin: 28px auto 4px;
+  font-size: 28px;
+  letter-spacing: -0.015em;
+  color: #fff;
+}
+.picker-band p {
+  margin-top: 0;
+  margin-bottom: 0;
+  color: #b7c8c5;
+}
+.picker-list {
+  margin-top: -48px;
+  padding: 0 16px 32px;
+}
+.picker-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 16px 18px 22px;
+  background: #fff;
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgb(15 31 36 / 0.08);
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.picker-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: var(--c);
+}
+.picker-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgb(15 31 36 / 0.12);
+}
+.picker-card:focus-visible {
+  outline: 3px solid #14b8a6;
+  outline-offset: 2px;
+}
+.picker-code {
+  display: inline-grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  flex-shrink: 0;
+  background: var(--c);
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
 @media (max-width: 360px) {
   .mantine-AppShell-main {
     padding-inline: 10px !important;

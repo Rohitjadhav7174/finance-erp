@@ -1,24 +1,44 @@
-import { Alert, Anchor, Button, Center, Paper, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core';
+import { Alert, Anchor, Button, Paper, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useState, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthProvider';
+import { IconCheck } from '../layout/icons';
 import { loginEmail } from '../lib/login';
 
-function AuthCard({ title, children }: { title: string; children: ReactNode }) {
+const POINTS = [
+  'Monthly sheet with the same columns as your Excel',
+  'Jay Ganesh Transport and A R Trading kept separate',
+  'Every change recorded, nightly backups',
+];
+
+/** Shared frame for sign-in pages: dark brand panel (left on laptops, top band on phones) + the form. */
+function AuthCard({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
   return (
-    <Center mih="100dvh" px="md" bg="var(--mantine-color-gray-0)">
-      <Paper withBorder shadow="sm" radius="md" p="lg" w="100%" maw={400}>
-        <Stack gap="md">
-          <div>
-            <Text size="sm" c="dimmed" fw={600}>Finance ERP</Text>
-            <Title order={2}>{title}</Title>
-          </div>
-          {children}
-        </Stack>
-      </Paper>
-    </Center>
+    <div className="auth-shell">
+      <aside className="auth-brand">
+        <div className="auth-logo"><span aria-hidden="true">₹</span>Finance ERP</div>
+        <p className="auth-tag">Jay Ganesh Transport · A R Trading Company</p>
+        <div className="auth-brand-body">
+          <h1>Your company accounts, simple and safe.</h1>
+          <p>Jay Ganesh Transport · A R Trading Company</p>
+          <ul>{POINTS.map((t) => <li key={t}><IconCheck size={16} />{t}</li>)}</ul>
+        </div>
+        <p className="auth-foot">Private system — authorised staff only.</p>
+      </aside>
+      <main className="auth-main">
+        <Paper withBorder className="auth-card" p={{ base: 'lg', sm: 'xl' }} w="100%" maw={420}>
+          <Stack gap="lg">
+            <div>
+              <Title order={2} fz={26}>{title}</Title>
+              {subtitle && <Text c="dimmed" size="sm" mt={4}>{subtitle}</Text>}
+            </div>
+            {children}
+          </Stack>
+        </Paper>
+      </main>
+    </div>
   );
 }
 
@@ -44,14 +64,14 @@ export function LoginPage() {
   });
 
   return (
-    <AuthCard title="Sign in">
+    <AuthCard title="Sign in" subtitle="Welcome back. Enter your login ID and password.">
       <form onSubmit={submit} noValidate>
         <Stack>
           {error && <Alert color="red" role="alert">{error}</Alert>}
           <TextInput label="Login ID or email" autoComplete="username" autoCapitalize="none" autoCorrect="off" size="md"
             {...form.getInputProps('email')} />
           <PasswordInput label="Password" autoComplete="current-password" size="md" {...form.getInputProps('password')} />
-          <Button type="submit" size="md" loading={busy} fullWidth>Sign in</Button>
+          <Button type="submit" size="md" h={48} loading={busy} fullWidth>Sign in</Button>
           <Anchor component={Link} to="/forgot-password" size="sm" ta="center">Forgot password?</Anchor>
         </Stack>
       </form>

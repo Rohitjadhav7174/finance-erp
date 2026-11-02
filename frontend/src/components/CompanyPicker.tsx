@@ -1,32 +1,39 @@
-import { Box, Center, Group, Paper, Stack, Text, Title, UnstyledButton } from '@mantine/core';
+import { Anchor, Box, Paper, Stack, Text, UnstyledButton } from '@mantine/core';
+import { useAuth } from '../auth/AuthProvider';
 import { useCompany } from '../context/CompanyContext';
+import { IconChevronRight } from '../layout/icons';
 import { ROLE_LABELS } from '../lib/format';
 
 /** Shown when the user has more than one company: entries always need an explicit company. */
 export function CompanyPicker() {
   const { me, selectCompany } = useCompany();
+  const { signOut } = useAuth();
+  const first = me?.profile.full_name.split(' ')[0];
   return (
-    <Center mih="100dvh" px="md">
-      <Stack w="100%" maw={420}>
-        <Title order={3}>Choose a company</Title>
-        <Text c="dimmed" size="sm">Everything you enter will be recorded in the company you choose.</Text>
+    <div className="picker-shell">
+      <header className="picker-band">
+        <div className="auth-logo"><span aria-hidden="true">₹</span>Finance ERP</div>
+        <h1>Namaste{first ? `, ${first}` : ''}</h1>
+        <p>Choose the company you want to work in.</p>
+      </header>
+      <Stack className="picker-list" w="100%" maw={480} gap="sm">
         {me?.companies.map((c) => (
-          <UnstyledButton key={c.id} onClick={() => selectCompany(c.id)} aria-label={`Open ${c.name}`}>
-            <Paper withBorder p="md">
-              <Group wrap="nowrap">
-                <Box className="tile-icon" style={{ background: c.theme_color, color: '#fff', fontWeight: 700, width: 44, height: 44 }}>
-                  {c.code}
-                </Box>
-                <Box style={{ minWidth: 0 }}>
-                  <Text fw={700}>{c.name}</Text>
-                  <Text size="sm" c="dimmed">{ROLE_LABELS[c.role]}</Text>
-                </Box>
-              </Group>
-            </Paper>
+          <UnstyledButton key={c.id} onClick={() => selectCompany(c.id)} aria-label={`Open ${c.name}`}
+            className="picker-card" style={{ '--c': c.theme_color } as React.CSSProperties}>
+            <span className="picker-code">{c.code}</span>
+            <Box style={{ minWidth: 0, flex: 1 }}>
+              <Text fw={700} size="lg" lh={1.25}>{c.name}</Text>
+              <Text size="sm" c="dimmed">{ROLE_LABELS[c.role]}</Text>
+            </Box>
+            <IconChevronRight size={20} className="menu-chevron" />
           </UnstyledButton>
         ))}
+        <Text size="xs" c="dimmed" ta="center" mt="xs">
+          Everything you enter is recorded in the company you choose. You can switch any time from the top bar.
+        </Text>
+        <Anchor component="button" type="button" size="sm" c="dimmed" mx="auto" onClick={signOut}>Sign out</Anchor>
       </Stack>
-    </Center>
+    </div>
   );
 }
 
