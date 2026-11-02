@@ -1,4 +1,5 @@
 import { formatDate, formatINR, fyLabel } from './format';
+import { loginEmail } from './login';
 
 describe('formatINR', () => {
   it.each([
@@ -36,5 +37,12 @@ describe('dates', () => {
     expect(fyLabel('2025-08-26')).toBe('2025-26');
     expect(fyLabel('2026-03-31')).toBe('2025-26');
     expect(fyLabel('2026-04-01')).toBe('2026-27');
+  });
+});
+
+describe('loginEmail', () => {
+  it('turns a login ID into the internal address and leaves emails alone', () => {
+    expect(loginEmail(' Ramdas ')).toBe('ramdas@login.local');
+    expect(loginEmail('Owner@Example.com')).toBe('owner@example.com');
   });
 });

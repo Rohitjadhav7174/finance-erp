@@ -1,9 +1,11 @@
 -- Start the books again from zero.
 --
--- KEEPS: companies, sites, the account list (Cash in Hand, Bank, Godown Bill, Diesel… — names only,
---        no amounts), logins and who can access which company, and system settings.
--- REMOVES: every entry, bill, installment, customer/supplier, import, reconciliation, approval,
---          closed month, entry-number counter, attachment record, backup record and the audit log.
+-- KEEPS: the companies, each company's built-in account list (Cash in Hand, Godown Bill, Diesel… —
+--        created automatically with every company; names only, no amounts; the entry form needs them),
+--        logins and who can access which company, and system settings.
+-- REMOVES: every entry, bill, installment, customer/supplier, site, extra account (e.g. banks added later),
+--          import, reconciliation, approval, closed month, entry-number counter, attachment record,
+--          backup record and the audit log.
 --
 -- This cannot be undone. Run it once, in Supabase → SQL Editor (it runs as the database owner).
 -- TRUNCATE is used on purpose: posted entries and the audit log refuse row-by-row deletes.
@@ -37,9 +39,15 @@ truncate table
   fin.financial_periods,
   fin.doc_counters,
   fin.backup_runs,
-  fin.security_events,
-  fin.audit_log
+  fin.sites
 restart identity;
+
+-- Accounts added after the company was created (bank accounts etc.); the built-in list stays.
+delete from fin.accounts where code not in
+  ('CASH', 'AR', 'AP', 'ADV', 'OBE', 'INC-SALE', 'INC-OTH', 'EXP-GDN', 'EXP-DSL', 'EXP-EMP', 'EXP-WRK', 'EXP-OTH');
+
+-- Logs last, so the deletes above leave no trace in them.
+truncate table fin.security_events, fin.audit_log restart identity;
 
 alter table fin.audit_log enable trigger tg_append_only_truncate;
 
@@ -48,6 +56,8 @@ select 'after' as at,
   (select count(*) from fin.bills) as bills,
   (select count(*) from fin.parties) as parties,
   (select count(*) from fin.companies) as companies,
-  (select count(*) from fin.accounts) as accounts;
+  (select count(*) from fin.accounts) as accounts,
+  (select count(*) from fin.sites) as sites,
+  (select count(*) from fin.audit_log) as audit;
 
 commit;

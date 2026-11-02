@@ -4,6 +4,7 @@ import { useState, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthProvider';
+import { loginEmail } from '../lib/login';
 
 function AuthCard({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -23,21 +24,23 @@ function AuthCard({ title, children }: { title: string; children: ReactNode }) {
 
 const emailRule = (v: string) => (/^\S+@\S+\.\S+$/.test(v) ? null : 'Enter a valid email');
 
+const loginIdRule = (v: string) => (/^[^\s@]+$|^\S+@\S+\.\S+$/.test(v.trim()) ? null : 'Enter your login ID or email');
+
 export function LoginPage() {
   const { session } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const form = useForm({ initialValues: { email: '', password: '' }, validate: { email: emailRule } });
+  const form = useForm({ initialValues: { email: '', password: '' }, validate: { email: loginIdRule } });
 
   if (session) return <Navigate to="/" replace />;
 
   const submit = form.onSubmit(async ({ email, password }) => {
     setBusy(true);
     setError(null);
-    const { error: err } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    const { error: err } = await supabase.auth.signInWithPassword({ email: loginEmail(email), password });
     setBusy(false);
     // Same message for wrong email or password: do not reveal which accounts exist.
-    if (err) setError(err.status === 429 ? 'Too many attempts. Wait a few minutes.' : 'Incorrect email or password.');
+    if (err) setError(err.status === 429 ? 'Too many attempts. Wait a few minutes.' : 'Incorrect login ID or password.');
   });
 
   return (
@@ -45,7 +48,7 @@ export function LoginPage() {
       <form onSubmit={submit} noValidate>
         <Stack>
           {error && <Alert color="red" role="alert">{error}</Alert>}
-          <TextInput label="Email" type="email" autoComplete="username" inputMode="email" size="md"
+          <TextInput label="Login ID or email" autoComplete="username" autoCapitalize="none" autoCorrect="off" size="md"
             {...form.getInputProps('email')} />
           <PasswordInput label="Password" autoComplete="current-password" size="md" {...form.getInputProps('password')} />
           <Button type="submit" size="md" loading={busy} fullWidth>Sign in</Button>
