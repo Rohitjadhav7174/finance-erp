@@ -10,7 +10,10 @@ LOGS="$ROOT/.localdb/logs"; mkdir -p "$LOGS"
 
 for f in backend/.env.cloud frontend/.env.cloud.local; do
   [ -f "$ROOT/$f" ] || { echo "Missing $f"; exit 1; }
-  if grep -q "PASTE_" "$ROOT/$f"; then echo "Fill in the PASTE_ values in $f first"; exit 1; fi
+  # Only real settings lines count, not the explanatory comments.
+  if grep -v '^[[:space:]]*#' "$ROOT/$f" | grep -q "PASTE_"; then
+    echo "Fill in the PASTE_ values in $f first:"; grep -v '^[[:space:]]*#' "$ROOT/$f" | grep "PASTE_" | cut -d= -f1; exit 1
+  fi
 done
 for port in 8000 5173; do
   if lsof -ti tcp:$port -sTCP:LISTEN >/dev/null; then echo "Port $port is busy — run scripts/dev_stop.sh first"; exit 1; fi
