@@ -17,7 +17,7 @@ Tick every line before entering or importing real financial data.
 - [ ] Owner bootstrapped with `scripts/bootstrap_owner.sql`; both companies exist with their accounts.
 
 ## Backend (Render)
-- [ ] Plan **Starter** (always on); region Frankfurt (same area as the Supabase database, Ireland).
+- [ ] Plan **Starter** (always on); region Singapore (same region as the Supabase database).
 - [ ] `ENVIRONMENT=production` (the app refuses unsafe settings), start command includes `--proxy-headers`.
 - [ ] `/api/health` returns ok; `/api/docs` returns 404 (API docs hidden in production).
 - [ ] `CORS_ORIGINS` lists only the real frontend address (https).

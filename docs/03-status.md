@@ -136,7 +136,7 @@ packages.
 
 | Item | Status | Evidence |
 |---|---|---|
-| Render blueprint for the backend (Frankfurt, next to the database; health check, proxy headers, production mode) | ✅ written | `render.yaml` |
+| Render blueprint for the backend (Singapore, next to the database; health check, proxy headers, production mode) | ✅ written | `render.yaml` |
 | Frontend production build with strict security headers (CSP, HSTS, no framing) and SPA routing | ✅ | build refuses non-https addresses; CSP rehearsal below |
 | Owner/company bootstrap script (no sample data) | ✅ | `scripts/bootstrap_owner.sql` |
 | Production rehearsal on this Mac: backend logged in as restricted `app_api` (not superuser, no RLS bypass, sees nothing without a login); production frontend build under its CSP | ✅ | workflow 8/8 and reports 10/10 browser steps, no CSP violations |
