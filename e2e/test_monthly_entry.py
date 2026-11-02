@@ -25,7 +25,7 @@ with sync_playwright() as p:
             pg.screenshot(path=f"{OUT}/phone-form.png", full_page=True)
             pg.get_by_role("button", name="Save", exact=True).click()
             expect(pg.get_by_text("4 entries recorded")).to_be_visible(); print("✓ one form saved bill + installment + 2 expenses")
-            pg.goto("http://localhost:5173/register"); expect(pg.get_by_text("Opening cash & bank").first).to_be_visible(timeout=15000)
+            pg.goto("http://localhost:5173/register"); expect(pg.locator("text=Installments received >> visible=true").first).to_be_visible(timeout=15000)  # shown once anything is received (works on empty books too)
             pg.screenshot(path=f"{OUT}/phone-register.png")
             print("✓ register opens")
         else:
