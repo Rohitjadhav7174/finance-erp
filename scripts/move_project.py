@@ -25,7 +25,10 @@ import psycopg
 from psycopg import sql
 
 ROOT = Path(__file__).resolve().parent.parent
-REGIONS = ["ap-south-1", "ap-southeast-1", "eu-west-1", "eu-central-1", "us-east-1", "us-west-1"]
+# Searched in this order when a project's region is not known (Supabase may pick any Asia-Pacific one).
+REGIONS = ["ap-south-1", "ap-southeast-1", "ap-southeast-2", "ap-northeast-1", "ap-northeast-2", "eu-west-1",
+           "eu-west-2", "eu-west-3", "eu-central-1", "eu-central-2", "eu-north-1", "us-east-1", "us-east-2", "us-west-1",
+           "us-west-2", "ca-central-1", "sa-east-1"]
 
 
 def read_env(path: Path) -> dict[str, str]:
@@ -51,7 +54,7 @@ def pooler_connect(ref: str, user: str, password: str, region_hint: str | None =
                 return conn, host
             except psycopg.OperationalError as e:
                 last = e
-                if "password authentication failed" in str(e):
+                if "password authentication failed" in str(e) or "wrong password" in str(e).lower():
                     raise SystemExit(f"Wrong database password for project {ref} (user {user}).") from None
     raise SystemExit(f"Could not reach project {ref}: {str(last).splitlines()[-1] if last else 'unknown'}")
 
