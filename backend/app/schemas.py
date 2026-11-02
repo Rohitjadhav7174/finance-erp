@@ -175,6 +175,13 @@ ENTRY_MODELS = {
 }
 
 
+class SheetInstallment(_Base):
+    """One installment received in the month, on its own date."""
+    received_on: date
+    amount: Money
+    receipt_no: Text100 | None = None
+
+
 class SheetExpense(_Base):
     account_id: uuid.UUID
     amount: Money
@@ -192,7 +199,8 @@ class MonthlySheetIn(_EntryCommon):
     period_from: date | None = None
     period_to: date | None = None
     due_date: date | None = None
-    installment_received: Money | None = None
+    installment_received: Money | None = None  # a single installment on entry_date (older form)
+    installments: list[SheetInstallment] = Field(default_factory=list, max_length=31)
     received_into_id: uuid.UUID | None = None
     receipt_method: Method = "cash"
     receipt_no: Text100 | None = None
@@ -204,7 +212,13 @@ class MonthlySheetIn(_EntryCommon):
 
     @model_validator(mode="after")
     def _rules(self):
-        if not (self.monthly_bill or self.installment_received or self.expenses):
+        if self.installment_received:  # same as one installment received on the entry date
+            if self.installments:
+                raise ValueError("give either installment_received or installments, not both")
+            self.installments = [SheetInstallment(received_on=self.entry_date, amount=self.installment_received,
+                                                  receipt_no=self.receipt_no)]
+            self.installment_received = None
+        if not (self.monthly_bill or self.installments or self.expenses):
             raise ValueError("enter at least one amount (monthly bill, installment received or an expense)")
         # customer, bill no. and cash/bank are optional: the server fills sheet defaults
         if self.period_from and self.period_to and self.period_to < self.period_from:

@@ -41,6 +41,7 @@ function Calc({ label, value, tone, children }: { label: string; value?: string;
 }
 
 interface PaymentRow { account_id: string | null; amount: string }
+interface InstallmentRow { received_on: string; amount: string }
 
 export function MonthlyEntryPage() {
   const { company, can } = useCompany();
@@ -63,14 +64,16 @@ export function MonthlyEntryPage() {
   const [payments, setPayments] = useState<PaymentRow[]>([{ account_id: null, amount: '' }]);
   const [bill, setBill] = useState('');
   const [other, setOther] = useState('');
-  const [received, setReceived] = useState('');
+  // A month can have several installments, each on its own date; their total is the Installment Received column.
+  const [installments, setInstallments] = useState<InstallmentRow[]>([{ received_on: todayISO(), amount: '' }]);
   const [error, setError] = useState<string | null>(null);
   const [key, setKey] = useState(() => crypto.randomUUID().replace(/-/g, ''));
   const [tab, setTab] = useState<'new' | 'saved'>('new');
   const [editing, setEditing] = useState<SavedRow | null>(null);
 
   const resetForm = () => {
-    setPayments([{ account_id: null, amount: '' }]); setBill(''); setOther(''); setReceived(''); setError(null);
+    setPayments([{ account_id: null, amount: '' }]); setBill(''); setOther(''); setError(null);
+    setInstallments([{ received_on: todayISO(), amount: '' }]);
     setEditing(null); setKey(crypto.randomUUID().replace(/-/g, ''));
   };
   // Edit = open the saved row in the form; saving replaces it (the old row is deleted in the same step).
@@ -80,7 +83,9 @@ export function MonthlyEntryPage() {
     setDate(row.entry_date); setPeriodFrom(p.from); setPeriodTo(row.period_to ?? monthEnd(p.from));
     setPayments(row.payments.length ? row.payments.map((x) => ({ account_id: x.account_id, amount: plain(x.amount) }))
       : [{ account_id: null, amount: '' }]);
-    setBill(plain(row.monthly_bill)); setOther(plain(row.other_expense)); setReceived(plain(row.installment_received));
+    setBill(plain(row.monthly_bill)); setOther(plain(row.other_expense));
+    setInstallments(row.installments.length ? row.installments.map((i) => ({ received_on: i.received_on, amount: plain(i.amount) }))
+      : [{ received_on: row.entry_date, amount: '' }]);
     setError(null); setEditing(row); setKey(crypto.randomUUID().replace(/-/g, '')); setTab('new');
     window.scrollTo({ top: 0 });
   };
@@ -100,7 +105,9 @@ export function MonthlyEntryPage() {
   const filledPayments = payments.filter((p) => p.account_id && isAmount(p.amount));
   const expenses = sumAmounts([...filledPayments.map((p) => p.amount), ...(isAmount(other) ? [other] : [])]);
   const billP = isAmount(bill) ? toPaise(bill) : 0n;
-  const recvP = isAmount(received) ? toPaise(received) : 0n;
+  const filledInstallments = installments.filter((i) => i.received_on && isAmount(i.amount));
+  const received = sumAmounts(filledInstallments.map((i) => i.amount));
+  const recvP = toPaise(received);
   const cashBalance = fromPaise(toPaise(openingCash) + recvP - toPaise(expenses));
   const outstanding = fromPaise(toPaise(owedBefore) + billP - recvP);
   const shortfall = fromPaise(billP > recvP ? billP - recvP : 0n);
@@ -112,7 +119,7 @@ export function MonthlyEntryPage() {
       body: json({
         entry_date: date, period_from: periodFrom || null, period_to: periodTo || null, action, replaces: editing?.key ?? null,
         monthly_bill: isAmount(bill) ? bill : null,
-        installment_received: isAmount(received) ? received : null,
+        installments: filledInstallments,
         expenses: [
           ...filledPayments.map((p) => {
             const a = paymentTypes.find((x) => x.id === p.account_id);
@@ -134,7 +141,8 @@ export function MonthlyEntryPage() {
   });
 
   const incomplete = payments.some((p) => (p.amount && !p.account_id) || (p.account_id && p.amount && !isAmount(p.amount)));
-  const bad = incomplete || (bill && !isAmount(bill)) || (received && !isAmount(received)) || (other && !isAmount(other));
+  const badInstallment = installments.some((i) => i.amount && (!isAmount(i.amount) || !i.received_on));
+  const bad = incomplete || badInstallment || (bill && !isAmount(bill)) || (other && !isAmount(other));
   const hasAmount = billP > 0n || recvP > 0n || toPaise(expenses) > 0n;
   if (!company) return null;
 
@@ -206,16 +214,38 @@ export function MonthlyEntryPage() {
       <div className="entry-grid">
       <Paper withBorder p="md">
         <div className="section-title"><span>3</span>Bill &amp; installment</div>
-        <SimpleGrid cols={{ base: 1, sm: 3 }}>
+        <SimpleGrid cols={{ base: 1, sm: 2 }}>
           <AmountInput label="Monthly Bill (₹)" value={bill} onChange={(e) => setBill(cleanAmount(e.currentTarget.value))} />
           <AmountInput label="Other Expense / Charge (₹)" value={other} onChange={(e) => setOther(cleanAmount(e.currentTarget.value))} />
-          <AmountInput label="Installment Received (₹)" value={received} onChange={(e) => setReceived(cleanAmount(e.currentTarget.value))} />
         </SimpleGrid>
+        <Text fw={600} size="sm" c="dimmed" mt="md" mb={6}>Installments received this month</Text>
+        <Stack gap="xs">
+          {installments.map((x, i) => (
+            <Box key={i}>
+              {installments.length > 1 && (
+                <Group justify="space-between" mb={2}>
+                  <Text size="xs" fw={600} c="dimmed">Installment {i + 1}</Text>
+                  <ActionIcon variant="subtle" color="red" size="sm" aria-label={`Remove installment ${i + 1}`}
+                    onClick={() => setInstallments((r) => r.filter((_, j) => j !== i))}>×</ActionIcon>
+                </Group>
+              )}
+              <div className="pair-grid">
+                <DateField aria-label={`Installment ${i + 1} date`} styles={{ input: { paddingInline: 10 } }} value={x.received_on}
+                  onChange={(e) => { const v = e.currentTarget.value; setInstallments((r) => r.map((y, j) => (j === i ? { ...y, received_on: v } : y))); }} />
+                <AmountInput aria-label={`Installment ${i + 1} amount`} size="md" styles={{ input: { fontWeight: 600 } }} value={x.amount}
+                  onChange={(e) => { const v = cleanAmount(e.currentTarget.value); setInstallments((r) => r.map((y, j) => (j === i ? { ...y, amount: v } : y))); }} />
+              </div>
+            </Box>
+          ))}
+          <Button variant="light" size="sm" w="fit-content"
+            onClick={() => setInstallments((r) => [...r, { received_on: date, amount: '' }])}>+ Add installment</Button>
+        </Stack>
       </Paper>
 
       <Paper withBorder p="md">
         <div className="section-title"><span>4</span>Calculated (like the Excel formulas)</div>
         <SimpleGrid cols={{ base: 1, xs: 2, md: 3 }}>
+          <Calc label="Installment Received (₹)" value={formatINR(received)} />
           <Calc label="Expenses (₹)" value={formatINR(expenses)} />
           <Calc label="Cash Balance (₹)" value={formatINR(cashBalance)} tone={toPaise(cashBalance) < 0n ? 'red.9' : undefined} />
           <Calc label="Outstanding Bill (₹)" value={formatINR(outstanding)} />

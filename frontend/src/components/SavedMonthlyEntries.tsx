@@ -13,6 +13,7 @@ export interface SavedRow {
   key: string; entry_date: string; period_from: string | null; period_to: string | null; bill_no: string | null;
   monthly_bill: string | null; installment_received: string | null; other_expense: string | null;
   payments: { account_id: string; label: string; amount: string }[];
+  installments: { received_on: string; amount: string; receipt_no: string | null }[];
   entry_nos: string[]; status: 'posted' | 'draft' | 'pending_approval' | 'cancel_requested' | 'cancelled';
 }
 
@@ -81,6 +82,11 @@ export function SavedMonthlyEntries({ onEdit }: { onEdit: (row: SavedRow) => voi
               <Figure label="Expenses" value={toPaise(expenses) > 0n ? expenses : null} />
               <Figure label="Other Expense" value={r.other_expense} />
             </SimpleGrid>
+            {r.installments.length > 1 && (
+              <Text size="xs" c="dimmed" mt="xs">
+                Installments: {r.installments.map((x) => `${formatDate(x.received_on)} ${formatINR(x.amount)}`).join(' · ')}
+              </Text>
+            )}
             {r.payments.length > 0 && (
               <Text size="xs" c="dimmed" mt="xs">
                 {r.payments.map((x) => `${x.label} ${formatINR(x.amount)}`).join(' · ')}

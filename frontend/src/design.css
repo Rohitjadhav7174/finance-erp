@@ -215,6 +215,13 @@ body {
   }
 }
 
+/* Two fields side by side that stack when the screen is too narrow for both (e.g. date + amount) */
+.pair-grid {
+  display: grid;
+  gap: var(--mantine-spacing-xs);
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+}
+
 /* Save button pinned to the bottom of the full-screen entry form */
 .save-bar {
   position: fixed;

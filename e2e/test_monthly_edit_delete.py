@@ -12,18 +12,24 @@ with sync_playwright() as p:
     pg=c.new_page(); pg.on("console", lambda m: m.type=="error" and errors.append(m.text))
     pg.goto("http://localhost:5173/entry")
     pg.get_by_label("From month").fill("2026-05"); pg.get_by_label("To month").fill("2026-06")
-    pg.get_by_label("Monthly Bill (₹)").fill("77000"); pg.get_by_label("Installment Received (₹)").fill("7000")
+    pg.get_by_label("Monthly Bill (₹)").fill("77000"); pg.get_by_label("Installment 1 date").fill("2026-05-10"); pg.get_by_label("Installment 1 amount").fill("4000")
+    pg.get_by_role("button", name="+ Add installment").click()
+    pg.get_by_label("Installment 2 date").fill("2026-06-12"); pg.get_by_label("Installment 2 amount").fill("3000")
+    expect(pg.get_by_text("₹7,000.00").first).to_be_visible()  # Installment Received total
     pg.get_by_role("button", name="Save", exact=True).click()
-    expect(pg.get_by_text("2 entries recorded")).to_be_visible(); print("✓ saved May – June 2026")
+    expect(pg.get_by_text("3 entries recorded")).to_be_visible(); print("✓ saved May – June 2026 with 2 installments")
 
     pg.get_by_text("Saved entries", exact=True).click()
     card = pg.locator(".mantine-Paper-root", has_text="May – June 2026").first
-    expect(card).to_be_visible(); expect(card.get_by_text("₹77,000.00")).to_be_visible(); print("✓ listed as one row")
+    expect(card).to_be_visible(); expect(card.get_by_text("₹77,000.00")).to_be_visible()
+    expect(card.get_by_text("₹7,000.00")).to_be_visible(); expect(card.get_by_text("10-05-2026 ₹4,000.00", exact=False)).to_be_visible()
+    print("✓ listed as one row, both installments shown")
     pg.screenshot(path=f"{OUT}/saved-list.png", full_page=True)
 
     card.get_by_role("button", name="Edit May – June 2026").click()
     expect(pg.get_by_text("Editing May – June 2026")).to_be_visible()
     expect(pg.get_by_label("Monthly Bill (₹)")).to_have_value("77000")
+    expect(pg.get_by_label("Installment 2 amount")).to_have_value("3000")
     pg.get_by_label("Monthly Bill (₹)").fill("78000")
     pg.screenshot(path=f"{OUT}/editing.png", full_page=True)
     pg.get_by_role("button", name="Save changes").click()

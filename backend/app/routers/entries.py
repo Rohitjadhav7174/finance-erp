@@ -3,6 +3,7 @@ post, delete drafts, request and perform reversals. Money is returned as strings
 import re
 import uuid
 from datetime import date
+from decimal import Decimal
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Path, Query, Request
@@ -298,8 +299,6 @@ def monthly_entry(company_id: uuid.UUID, body: MonthlySheetIn, idempotency_key: 
     """Creates, in ONE transaction, everything one Excel row stands for:
     monthly bill (income + receivable) → installment received (applied to that bill, then to
     the customer's oldest open bills) → each payment line as an expense. All or nothing."""
-    from decimal import Decimal
-
     from .. import schemas as s
 
     # Every part is stored with "<key>-bill/-rcpt/-expN", which is how the saved row is found again
@@ -318,7 +317,7 @@ def monthly_entry(company_id: uuid.UUID, body: MonthlySheetIn, idempotency_key: 
             raise HTTPException(422, "This company has no Cash in Hand account.")
         body.received_into_id = body.received_into_id or cash["id"]
         body.paid_from_id = body.paid_from_id or cash["id"]
-    if (body.monthly_bill or body.installment_received) and not body.party_id:
+    if (body.monthly_bill or body.installments) and not body.party_id:
         row = db.execute("select id from fin.parties where company_id = %s and lower(name) = 'monthly bill customer'",
                          (company_id,)).fetchone()
         body.party_id = row["id"] if row else db.execute(
@@ -345,13 +344,17 @@ def monthly_entry(company_id: uuid.UUID, body: MonthlySheetIn, idempotency_key: 
         eid, _ = ledger.create_entry(db, company_id, ledger.plan_entry(db, company_id, "bill", form), body.action, key("bill"))
         created.append(eid)
         bill_id = db.execute("select id from fin.bills where journal_entry_id = %s", (eid,)).fetchone()["id"]
-    if body.installment_received:
-        left = body.installment_received
+    # Each installment is its own receipt on its own date: applied to this month's bill first, then to the
+    # customer's oldest open posted bills. Parts are keyed rcpt, rcpt2, rcpt3 … (rcpt alone for older rows).
+    bill_open = body.monthly_bill if (bill_id and body.action == "post") else Decimal(0)
+    for n, inst in enumerate(body.installments, start=1):
+        left = inst.amount
         allocations = []
-        if bill_id and body.action == "post":
-            take = min(left, body.monthly_bill)
+        if bill_open > 0:
+            take = min(left, bill_open)
             allocations.append({"bill_id": bill_id, "amount": take})
             left -= take
+            bill_open -= take
         if left > 0:  # remainder goes to the customer's oldest open posted bills
             for b in db.execute(
                 """select b.id, b.amount - coalesce((select sum(ba.amount) from fin.bill_allocations ba
@@ -365,12 +368,13 @@ def monthly_entry(company_id: uuid.UUID, body: MonthlySheetIn, idempotency_key: 
                     take = min(left, b["open"])
                     allocations.append({"bill_id": b["id"], "amount": take})
                     left -= take
-        form = s.ReceiptIn(**common, receipt_kind="customer_payment", party_id=body.party_id,
-                           amount=body.installment_received, money_account_id=body.received_into_id,
-                           payment_method=body.receipt_method, reference_no=body.receipt_no,
+        form = s.ReceiptIn(**{**common, "entry_date": inst.received_on}, receipt_kind="customer_payment",
+                           party_id=body.party_id, amount=inst.amount, money_account_id=body.received_into_id,
+                           payment_method=body.receipt_method, reference_no=inst.receipt_no,
                            description=body.description or "Installment received",
                            allocations=[s.Allocation(**a) for a in allocations])
-        eid, _ = ledger.create_entry(db, company_id, ledger.plan_entry(db, company_id, "receipt", form), body.action, key("rcpt"))
+        eid, _ = ledger.create_entry(db, company_id, ledger.plan_entry(db, company_id, "receipt", form), body.action,
+                                     key("rcpt" if n == 1 else f"rcpt{n}"))
         created.append(eid)
     for i, x in enumerate(body.expenses):
         form = s.ExpenseIn(**common, expense_account_id=x.account_id, amount=x.amount, money_account_id=body.paid_from_id,
@@ -379,14 +383,15 @@ def monthly_entry(company_id: uuid.UUID, body: MonthlySheetIn, idempotency_key: 
         created.append(eid)
     total_exp = sum((x.amount for x in body.expenses), Decimal(0))
     return {"entries": [_load(db, e) for e in created],
-            "summary": {"monthly_bill": str(body.monthly_bill or 0), "installment_received": str(body.installment_received or 0),
+            "summary": {"monthly_bill": str(body.monthly_bill or 0),
+                        "installment_received": str(sum((i.amount for i in body.installments), Decimal(0))),
                         "expenses": str(total_exp)}}
 
 
 # ---------------------------------------------------------------------------
 # Saved monthly entries: list, cancel (delete) and the replace step of editing
 # ---------------------------------------------------------------------------
-_PART_RE = r"-(bill|rcpt|exp[0-9]+)$"
+_PART_RE = r"-(bill|rcpt[0-9]*|exp[0-9]+)$"
 RowKey = Annotated[str, Path(pattern=r"^[A-Za-z0-9_]{8,80}$")]
 
 
@@ -402,6 +407,7 @@ def _monthly_parts(db, company_id: uuid.UUID, key: str | None = None, d_from: da
         where.append("e.entry_date <= %(to)s")
     return db.execute(f"""
         select e.id, e.entry_no, e.entry_type::text, e.status::text, e.entry_date, e.description, e.version, e.created_at,
+               e.reference_no,
                substring(e.idempotency_key from '^(.*){_PART_RE}') as row_key,
                b.period_from, b.period_to, b.bill_no,
                (select coalesce(sum(debit), 0)::numeric(14,2)::text from fin.journal_lines where entry_id = e.id) as amount,
@@ -437,14 +443,18 @@ def list_monthly(company_id: uuid.UUID, db=Depends(get_db), date_from: date | No
         r = rows.setdefault(p["row_key"], {
             "key": p["row_key"], "entry_date": p["entry_date"], "created_at": p["created_at"], "period_from": None,
             "period_to": None, "bill_no": None, "monthly_bill": None, "installment_received": None,
-            "payments": [], "other_expense": None, "entry_nos": [], "parts": []})
+            "payments": [], "installments": [], "other_expense": None, "entry_nos": [], "parts": [], "_rank": 9})
+        # The row's date is the form's date: the bill's, else a payment's; installments carry their own dates.
+        rank = {"bill_sale": 0, "expense": 1}.get(p["entry_type"], 2)
+        if rank < r["_rank"]:
+            r.update(entry_date=p["entry_date"], _rank=rank)
         r["parts"].append(p)
         if p["entry_no"]:
             r["entry_nos"].append(p["entry_no"])
         if p["entry_type"] == "bill_sale":
             r.update(period_from=p["period_from"], period_to=p["period_to"], bill_no=p["bill_no"], monthly_bill=p["amount"])
         elif p["entry_type"] == "receipt":
-            r["installment_received"] = p["amount"]
+            r["installments"].append({"received_on": p["entry_date"], "amount": p["amount"], "receipt_no": p["reference_no"]})
         elif p["expense_code"] == "EXP-OTH":
             r["other_expense"] = p["amount"]
         else:
@@ -452,6 +462,10 @@ def list_monthly(company_id: uuid.UUID, db=Depends(get_db), date_from: date | No
     out = []
     for r in rows.values():
         r["status"] = _row_status(r.pop("parts"))
+        r["installments"].sort(key=lambda i: i["received_on"])
+        if r["installments"]:
+            r["installment_received"] = str(sum(Decimal(i["amount"]) for i in r["installments"]))
+        del r["_rank"]
         out.append(r)
     out.sort(key=lambda r: (r["entry_date"], r["created_at"]), reverse=True)
     return out

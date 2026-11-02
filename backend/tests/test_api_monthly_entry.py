@@ -169,3 +169,27 @@ def test_month_paid_by_a_later_installment_needs_that_month_deleted_first(client
                        json={"reason": "Wrong month"}).status_code == 200
     assert client.post(f"/api/companies/{art}/monthly-entries/{may}/cancel", headers=owner,
                        json={"reason": "Wrong month"}).status_code == 200
+
+
+def test_several_installments_in_one_month(client, auth, seed):
+    """Each installment is its own receipt on its own date; together they fill the Installment Received column."""
+    art, h, acc, cust = _setup(client, auth, seed)
+    key = uuid.uuid4().hex
+    r = _save(client, h, art, acc, cust, key, installment_received=None, expenses=[], monthly_bill="1000",
+              installments=[{"received_on": "2025-09-05", "amount": "300"},
+                            {"received_on": "2025-09-18", "amount": "500", "receipt_no": f"R-{uuid.uuid4().hex[:6]}"},
+                            {"received_on": "2025-09-28", "amount": "400"}])
+    out = r.json()
+    receipts = [e for e in out["entries"] if e["entry_type"] == "receipt"]
+    assert [e["entry_date"] for e in receipts] == ["2025-09-05", "2025-09-18", "2025-09-28"]
+    assert out["summary"]["installment_received"] == "1200"
+    bill_entry = client.get(f"/api/entries/{out['entries'][0]['id']}", headers=h).json()
+    bill = client.get(f"/api/bills/{bill_entry['bill']['id']}", headers=h).json()
+    assert (bill["paid"], bill["outstanding"]) == ("1000.00", "0.00")  # the extra 200 waits as an advance / older bills
+    row = _row(client, h, art, key)
+    assert row["installment_received"] == "1200.00" and row["entry_date"] == "2025-09-10"
+    assert [(i["received_on"], i["amount"]) for i in row["installments"]] == \
+        [("2025-09-05", "300.00"), ("2025-09-18", "500.00"), ("2025-09-28", "400.00")]
+    owner = auth("super")
+    assert client.post(f"/api/companies/{art}/monthly-entries/{key}/cancel", headers=owner,
+                       json={"reason": "Test delete"}).json() == {"cancelled": 4, "waiting_approval": 0, "status": "cancelled"}
