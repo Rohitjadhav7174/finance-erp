@@ -46,10 +46,12 @@
   flex-shrink: 0;
 }
 
-/* Desktop sidebar */
+/* Desktop sidebar: dark slate with teal highlights */
 .navbar {
-  background: #fff;
-  border-right: 1px solid var(--card-border, #e8eaee);
+  background: #0f1f24;
+  border-right: 0;
+  color: #e3ecea;
+  --mantine-color-dimmed: #9fb3b0;
 }
 
 .navLabel {
@@ -57,7 +59,7 @@
   font-weight: 650;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--mantine-color-dimmed);
+  color: #8fa5a2;
   padding: 8px 12px 6px;
 }
 
@@ -66,28 +68,29 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 9px 12px;
+  padding: 10px 12px;
   border-radius: 10px;
   font-size: 14px;
   font-weight: 550;
-  color: #3d4555;
+  color: #c9d6d4;
   transition: background 0.12s ease, color 0.12s ease;
 }
 .navItem > svg {
   width: 19px;
   height: 19px;
-  color: #6b7280;
+  color: #8fa5a2;
 }
 .navItem:hover {
-  background: #f1f6f4;
+  background: rgb(255 255 255 / 0.06);
+  color: #fff;
 }
 .navItem[data-active] {
-  background: var(--accent-soft);
-  color: color-mix(in srgb, var(--accent) 80%, #000);
+  background: rgb(20 184 166 / 0.16);
+  color: #fff;
   font-weight: 650;
 }
 .navItem[data-active] > svg {
-  color: inherit;
+  color: #5eead4;
 }
 .navItem[data-active]::before {
   content: '';
@@ -97,15 +100,27 @@
   bottom: 8px;
   width: 3px;
   border-radius: 0 3px 3px 0;
-  background: var(--accent);
+  background: #2dd4bf;
+}
+.navItem:focus-visible {
+  outline: 2px solid #5eead4;
+  outline-offset: -2px;
 }
 
 .navUser {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 8px 4px;
-  border-top: 1px solid var(--card-border, #e8eaee);
+  padding: 12px 8px 4px;
+  border-top: 1px solid rgb(255 255 255 / 0.1);
+}
+
+.navSignOut {
+  color: #c9d6d4;
+}
+.navSignOut:hover {
+  background: rgb(255 255 255 / 0.08);
+  color: #fff;
 }
 
 /* Leave room for the bottom bar on phones */
@@ -208,4 +223,8 @@
 
 .fabSpacer {
   width: 44px;
+}
+
+.navUser :global(.mantine-Avatar-root) :global(.mantine-Avatar-placeholder) {
+  color: #fff;
 }

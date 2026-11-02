@@ -136,12 +136,12 @@ export function AppLayout() {
             </UnstyledButton>
           ))}
           <Box mt="auto" className={classes.navUser}>
-            <Avatar size={32} radius="xl" color="brand" variant="light">{initials(me.profile.full_name)}</Avatar>
+            <Avatar size={32} radius="xl" color="brand" variant="filled">{initials(me.profile.full_name)}</Avatar>
             <Box style={{ minWidth: 0, flex: 1 }}>
               <Text size="sm" fw={600} truncate>{me.profile.full_name}</Text>
               <Text size="xs" c="dimmed" truncate>{ROLE_LABELS[company.role]}</Text>
             </Box>
-            <ActionIcon variant="subtle" color="gray" onClick={signOut} aria-label="Sign out"><IconLogout size={18} /></ActionIcon>
+            <ActionIcon variant="transparent" className={classes.navSignOut} onClick={signOut} aria-label="Sign out"><IconLogout size={18} /></ActionIcon>
           </Box>
         </Stack>
       </AppShell.Navbar>
